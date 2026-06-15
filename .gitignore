@@ -55,3 +55,27 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+
+# My
+
+bin/
+.obsidian/
+.xdp-*
+
+**/.obsidian/
+**/.vscode/
+bash/
+
+*.sln
+
+.terraform/
+.terraform.d/
+*.tfstate
+*.tfstate*
+
+*.tfvars
+*.tfvars.json
+
+.terraformrc
+terraform.rc
