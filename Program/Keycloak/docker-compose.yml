@@ -1,0 +1,121 @@
+volumes:
+  tf-plugin-caches:
+  kc_data:
+
+networks:
+  internal-network:
+    driver: bridge
+  external-network:
+    driver: bridge
+
+services:
+
+  keycloak:
+    image: keycloak/keycloak:26.6.1
+    container_name: keycloak
+    command: "start"
+    networks:
+      - internal-network
+      - external-network
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${ADMIN_USERNAME}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+
+      KC_HEALTH_ENABLED: true
+      KC_METRICS_ENABLED: true
+
+      KC_HTTP_ENABLED: true
+      KC_HTTP_PORT: ${KEYCLOAK_HTTP_PORT}
+      KC_HOSTNAME: https://${KEYCLOAK_HOST}
+      KC_PROXY_HEADERS: xforwarded
+
+      KC_DB_DEBUG_JPQL: true
+      KC_DB: postgres
+      KC_DB_USERNAME: ${KC_POSTGRES_USER}
+      KC_DB_PASSWORD: ${KC_POSTGRES_PASSWORD}
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/${KC_POSTGRES_DB}
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<> /dev/tcp/localhost/9000; echo -e 'GET /health/ready HTTP/1.1\\r\\nhost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3; if [ $? -eq 0 ]; then echo 'Healthcheck Successful'; exit 0; else echo 'Healthcheck Failed'; exit 1; fi;"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: 2
+          memory: 2G
+    restart: always
+
+  keycloak-db:
+    image: postgres:18-alpine
+    container_name: keycloak-db
+    ports:
+      - ${KC_POSTGRES_PORT}:5432
+    networks:
+      - internal-network
+    environment:
+      POSTGRES_DB: ${KC_POSTGRES_DB}
+      POSTGRES_USER: ${KC_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${KC_POSTGRES_PASSWORD}
+    volumes:
+      - kc_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${KC_POSTGRES_USER} -d ${KC_POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: 0.5
+          memory: 512M
+    restart: unless-stopped
+
+  terraform:
+    image: hashicorp/terraform:1.15.1
+    container_name: terraform
+    volumes:
+      - ./Terraform:/Terraform
+      - ./terraform-config:/root/.terraformrc
+      - tf-plugin-caches:/Terraform/.terraform.d/plugin-cache
+    networks:
+      - internal-network
+      - external-network
+    working_dir: /Terraform
+    entrypoint: ["/bin/sh", "-c", "terraform init && terraform plan && terraform apply -auto-approve && sleep infinity"]
+    environment:
+      TF_IN_AUTOMATION: true
+      TF_PLUGIN_CACHE_DIR: /Terraform/.terraform.d/plugin-cache
+
+      TF_VAR_admin_username: ${ADMIN_USERNAME}
+      TF_VAR_admin_password: ${ADMIN_PASSWORD}
+      TF_VAR_kc_url: http://keycloak:${KEYCLOAK_HTTP_PORT}
+
+      TF_VAR_smtp_host: ${KC_SMPT_HOST}
+      TF_VAR_smtp_port: ${KC_SMPT_PORT}
+      TF_VAR_smtp_from: ${KC_SMPT_FROM}
+      TF_VAR_smtp_username: ${KC_SMPT_USERNAME}
+      TF_VAR_smtp_password: ${KC_SMPT_PASSWORD}
+
+      TF_VAR_employee_realm: ${KC_REALM_NAME}
+      TF_VAR_employee_realm_display_name: ${KC_REALM_DISPLAY_NAME}
+
+      TF_VAR_employee_backend_client_id: ${KC_BACKEND_CLIENT_ID}
+      TF_VAR_employee_backend_client_name: ${KC_BACKEND_CLIENT_NAME}
+      TF_VAR_employee_backend_client_secret: ${KC_BACKEND_CLIENT_SECRET}
+      TF_VAR_employee_frontend_client_id: ${KC_FRONTEND_CLIENT_ID}
+      TF_VAR_employee_frontend_client_name: ${KC_FRONTEND_CLIENT_NAME}
+
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: 0.25
+          memory: 128M
+    restart: always

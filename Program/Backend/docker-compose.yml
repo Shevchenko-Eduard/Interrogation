@@ -1,0 +1,127 @@
+volumes:
+  backend-db-data:
+  minio-data:
+
+networks:
+  internal-network:
+    driver: bridge
+  external-network:
+    driver: bridge
+
+services:
+
+  backend-api:
+    build:
+      context: .
+      dockerfile: webapi.dockerfile
+      target: backend-api
+    container_name: backend-api
+    depends_on:
+      backend-db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    environment:
+      Keycloak__AuthServerUrl: ${KEYCLOAK_AUTH_SERVER_URL}
+      Keycloak__Realm: ${KC_REALM_NAME}
+      Keycloak__Resource: ${KC_BACKEND_CLIENT_ID}
+      Keycloak__Secret: ${KC_BACKEND_CLIENT_SECRET}
+
+      Minio__Endpoint: ${MINIO_HOST}:${S3_PORT}
+      Minio__Username: ${MINIO_ROOT_USER}
+      Minio__Password: ${MINIO_ROOT_PASSWORD}
+      Minio__HTTPS: false
+
+      DB__Host: backend-db
+      DB__Port: 5432
+      DB__Database: ${SERVER_POSTGRES_DB}
+      DB__Username: ${SERVER_POSTGRES_USER}
+      DB__Password: ${SERVER_POSTGRES_PASSWORD}
+
+      Redis__Endpoint: redis:${CACHE_PORT}
+      Redis__InstanceName: ${REDIS_INSTANCE_NAME}
+      Redis__Password: ${CACHE_PASSWORD}
+
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+      ASPNETCORE_URLS: ${ASPNETCORE_URLS}
+
+      LOG_LEVEL: debug
+    ports:
+      - "${EMPLOYEE_API_PORT}:${ASPNETCORE_PORT}"
+    networks:
+      - internal-network
+      - external-network
+    extra_hosts:
+      - "${KEYCLOAK_HOST}:172.20.0.100"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${ASPNETCORE_PORT}/health"]
+      interval: 5s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: 0.5
+          memory: 256M
+    restart: unless-stopped
+
+  backend-db:
+    image: postgres:18-alpine
+    container_name: backend-db
+    ports:
+      - ${SERVER_POSTGRES_PORT}:5432
+    environment:
+      POSTGRES_DB: ${SERVER_POSTGRES_DB}
+      POSTGRES_USER: ${SERVER_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${SERVER_POSTGRES_PASSWORD}
+    volumes:
+      - backend-db-data:/var/lib/postgresql
+    networks:
+      - internal-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${SERVER_POSTGRES_USER} -d ${SERVER_POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: 0.5
+          memory: 512M
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z-cpuv1
+    container_name: minio
+    command: minio server /data
+    volumes:
+      - minio-data:/data
+    ports:
+      - "${S3_PORT}:${S3_PORT}"
+      - "${S3_PORT_UI}:${S3_PORT_UI}"
+    environment:
+      - MINIO_CONSOLE_ADDRESS=${S3_HOST}:${S3_PORT_UI}
+      - MINIO_ADDRESS=${S3_HOST}:${S3_PORT}
+
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+
+      - MINIO_SKIP_CERT_VERIFICATION=true
+    networks:
+      - internal-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${S3_PORT}/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: 0.5
+          memory: 512M
+    restart: unless-stopped
+    

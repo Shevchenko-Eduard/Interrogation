@@ -1,0 +1,55 @@
+<Project>
+
+  <ItemGroup>
+    <PackageReference Include="Roslynator.Analyzers" Version="4.15.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <PropertyGroup>
+    <!-- Целевой фреймворк: .NET 10.0 -->
+    <TargetFramework>net10.0</TargetFramework>
+
+    <!-- Автоматическое подключение глобальных using'ов -->
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- Поддержка nullable reference types для проверки null-значений на этапе компиляции -->
+    <Nullable>enable</Nullable>
+
+    <!-- Наивысший уровень анализа кода для выявления потенциальных проблем -->
+    <AnalysisLevel>latest</AnalysisLevel>
+
+    <!-- Информация об авторе проекта -->
+    <Authors>ShEduard</Authors>
+
+    <!-- Наименование компании -->
+    <Company>Interrogation</Company>
+
+    <!-- Публикация в один самостоятельный исполняемый файл -->
+    <PublishSingleFile>false</PublishSingleFile>
+
+    <!-- Включение нативных библиотек в архив при самостоятельной распаковке -->
+    <IncludeNativeLibrariesForSelfExtract>false</IncludeNativeLibrariesForSelfExtract>
+
+    <!-- Отключение обрезки неиспользуемого кода для сохранения функциональности -->
+    <PublishTrimmed>false</PublishTrimmed>
+
+    <!-- Отключение AOT-компиляции для ускорения разработки -->
+    <PublishAot>false</PublishAot>
+
+    <!-- Самостоятельная публикация со встроенным .NET Runtime -->
+    <SelfContained>false</SelfContained>
+
+    <!-- Целевая платформа: Linux x64 -->
+    <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
+
+    <!-- Отключение поддержки локализации для уменьшения размера приложения -->
+    <InvariantGlobalization>false</InvariantGlobalization>
+
+    <!-- <GenerateDocumentationFile>true</GenerateDocumentationFile> -->
+
+    <!-- Отключение предупреждения о несовместимости версий пакетов -->
+    <NoWarn>NU1900</NoWarn>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,45 @@
+networks:
+  external-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+
+services:
+  nginx:
+    image: nginx:1.30-alpine
+    container_name: nginx
+    ports:
+      - "${NGINX_HTTP_PORT}:80"
+      - "${NGINX_HTTPS_PORT}:443"
+    volumes:
+      - ./certs/:/etc/nginx/certs/:ro
+      - ./conf/nginx.conf.template:/etc/nginx/templates/nginx.conf.template:ro
+      - ./conf/nginx.conf:/etc/nginx/nginx.conf:ro
+      - /dev/null:/etc/nginx/conf.d/default.conf
+    environment:
+      - PORT_EMPLOYEE=${ASPNETCORE_PORT}
+      - HOST_EMPLOYEE=backend-api
+      - PORT_AUTH=${KEYCLOAK_HTTP_PORT}
+      - HOST_AUTH=keycloak
+
+      - NGINX_DOMAIN=${NGINX_DOMAIN}
+    networks:
+      external-network:
+        ipv4_address: 172.20.0.100
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: 0.25
+          memory: 128M
+    restart: unless-stopped
