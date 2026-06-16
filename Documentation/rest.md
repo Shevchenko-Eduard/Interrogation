@@ -2,30 +2,60 @@
 
 ## fragment
 
-**GET** - /api/v1/documents/{id_document}/fragments - получить данные о каждои фрагменте определенного документа
+### **GET** - /v1/documents/{id}/fragments
 
-**GET** - /api/v1/documents/{id_document}/fragment/{id_fragment} - получить конкретный фрагмент конкретного документа
+Получить данные о каждои фрагменте определенного документа
 
-**POST** - /api/v1/documents/{id_document}/fragment - создать новый фрагмент
+### **GET** - /v1/documents/{<addr title="document id">***did***</addr>}/fragment/{<addr title="fragment id">***fid***</addr>}
 
-**DELETE** - /api/v1/documents/{id_document}/fragment/{id_fragment} - удалить фрагмент
+Получить конкретный фрагмент конкретного документа
+
+### **POST** - /v1/documents/{id}/fragment
+
+Создать новый фрагмент
+
+### **DELETE** - /v1/documents/{<addr title="document id">***did***</addr>}/fragment/{<addr title="fragment id">***fid***</addr>}
+
+Удалить фрагмент
 
 ## document
 
-**GET** - /api/v1/documents - получить список документов без конкретных данных
+### **GET** - /v1/documents
 
-**GET** - /api/v1/documents/{id} - получить более подробные данные но только для одного документа
+Получить список документов без конкретных данных
 
-**POST** - /api/v1/documents - создать новый документ
+### **GET** - /v1/documents/{id}
 
-**PUT** - /api/v1/documents/{id} - изменить данные о документе
+Получить более подробные данные но только для одного документа
 
-**DELETE** - /api/v1/documents/{id} - удалить документ
+### **POST** - /v1/documents
+
+Создать новый документ
+
+### **PUT** - /v1/documents/{id}
+
+Изменить данные о документе
+
+### **DELETE** - /v1/documents/{id}
+
+Удалить документ
 
 ## encryption_type
 
-**GET** - /api/v1/documents/encryption/types - получить список доступных типов шифрования документов
+### **GET** - /v1/documents/encryption/types
+
+Получить список доступных типов шифрования документов
 
 ## secret
 
-**GET** - /api/v1/documents/{id}/encryption/secret - получить ключ шифрования файла
+### **GET** - /v1/documents/{<addr title="document id">***did***</addr>}/encryption/secrets/{<addr title="secret id">***sid***</addr>}
+
+Получить ключ шифрования файла
+
+### **POST** - /v1/documents/{id}/encryption/secrets
+
+Создать ключ шифрования
+
+### **DELETE** - /v1/documents/{<addr title="document id">***did***</addr>}/encryption/secrets/{<addr title="secret id">***sid***</addr>}
+
+Удалить ключ шифрования
