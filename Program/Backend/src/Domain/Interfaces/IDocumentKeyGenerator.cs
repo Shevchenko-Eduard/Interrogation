@@ -1,6 +1,6 @@
 namespace Domain.Interfaces;
 
-public interface IDocumentKeyGenerator
+public interface IDocumentKeyManager
 {
-    string CreateDocumentKey();
+    string New();
 }

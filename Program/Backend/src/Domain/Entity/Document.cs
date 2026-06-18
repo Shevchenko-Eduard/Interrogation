@@ -10,14 +10,14 @@ public sealed class Document
     public string DocumentKey { get; init; }
     public string CreatorId { get; init; }
     public string Name { get; set; }
-    public string Description { get; set; }
+    public string? Description { get; set; }
     public DateTimeOffset DateOfCreate { get; init; }
     public string ContentType { get; init; }
     public string Extension { get; init; }
     public Secret? Secret { get; set; }
     public EncryptionType? EncryptionType { get; set; }
     public ICollection<Fragment>? Fragments { get; set; }
-    private readonly IDocumentKeyGenerator _documentKeyGenerator;
+    private readonly IDocumentKeyManager _documentKeyGenerator;
     private readonly IClock _clock;
 #pragma warning disable CS9264, CS8618
     private Document() { }
@@ -27,10 +27,10 @@ public sealed class Document
         int secretId,
         string creatorId,
         string name,
-        string description,
+        string? description,
         string contentType,
         string extension,
-        IDocumentKeyGenerator documentKeyGenerator,
+        IDocumentKeyManager documentKeyGenerator,
         IClock clock
     )
     {
@@ -39,11 +39,11 @@ public sealed class Document
 
         EncryptionTypeId = encryptionTypeId;
         SecretId = secretId;
-        DocumentKey = _documentKeyGenerator.CreateDocumentKey();
+        DocumentKey = _documentKeyGenerator.New();
         CreatorId = creatorId;
         Name = name;
         Description = description;
-        DateOfCreate = clock.Now;
+        DateOfCreate = _clock.Now;
         ContentType = contentType;
         Extension = extension;
     }

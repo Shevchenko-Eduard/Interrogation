@@ -1,6 +1,8 @@
 namespace Domain.Interfaces;
 
-public interface ISecretGenerator
+public interface ISecretManager
 {
-    string CreateSecret();
+    string New();
+    string Encrypt(string value);
+    string Decrypt(string value);
 }
