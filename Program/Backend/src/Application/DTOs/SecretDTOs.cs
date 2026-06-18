@@ -47,9 +47,9 @@ public static class SecretDTOs
             string Value
         )
         {
-            public static Read FromSecret(Secret secret, ISecretManager secretManager) => new(
+            public static Read FromSecret(Secret secret) => new(
                     Id: secret.Id,
-                    Value: secretManager.Decrypt(secret.Value)
+                    Value: secret.Value
                 );
         }
     }

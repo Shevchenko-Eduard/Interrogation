@@ -48,14 +48,14 @@
 
 ## secret
 
-### **GET** - /v1/documents/{<addr title="document id">***did***</addr>}/encryption/secrets/{<addr title="secret id">***sid***</addr>}
+### **GET** - /v1/documents/encryption/secrets/{<addr title="secret id">***sid***</addr>}
 
 Получить ключ шифрования файла
 
-### **POST** - /v1/documents/{id}/encryption/secrets
+### **POST** - /v1/documents/encryption/secrets
 
 Создать ключ шифрования
 
-### **DELETE** - /v1/documents/{<addr title="document id">***did***</addr>}/encryption/secrets/{<addr title="secret id">***sid***</addr>}
+### **DELETE** - /v1/documents/encryption/secrets/{<addr title="secret id">***sid***</addr>}
 
 Удалить ключ шифрования
