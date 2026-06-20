@@ -15,7 +15,7 @@ public static class SecretDTOs
         public record Delete(
             int Id
         );
-        public record Read(
+        public record ReadById(
             int Id
         )
         {

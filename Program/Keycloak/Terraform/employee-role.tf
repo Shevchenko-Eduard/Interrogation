@@ -1,179 +1,97 @@
-resource "keycloak_role" "hotel_create_role" {
+# --- DOCUMENT ----
+
+resource "keycloak_role" "document_create" {
   realm_id    = keycloak_realm.employee.id
   client_id   = keycloak_openid_client.employee_backend_client.id
-  name        = "Hotel-Create"
+  name        = "DocumentCreate"
 }
 
-resource "keycloak_role" "hotel_update_role" {
+resource "keycloak_role" "document_update" {
   realm_id    = keycloak_realm.employee.id
   client_id   = keycloak_openid_client.employee_backend_client.id
-  name        = "Hotel-Update"
+  name        = "DocumentUpdate"
 }
 
-resource "keycloak_role" "hotel_delete_role" {
+resource "keycloak_role" "document_delete" {
   realm_id    = keycloak_realm.employee.id
   client_id   = keycloak_openid_client.employee_backend_client.id
-  name        = "Hotel-Delete"
+  name        = "DocumentDelete"
 }
 
-resource "keycloak_role" "hotel_hotel_tag_create_role" {
+resource "keycloak_role" "documents_read" {
   realm_id    = keycloak_realm.employee.id
   client_id   = keycloak_openid_client.employee_backend_client.id
-  name        = "HotelHotelTag-Create"
+  name        = "DocumentsRead"
 }
 
-resource "keycloak_role" "hotel_hotel_tag_delete_role" {
+resource "keycloak_role" "document_read_by_id" {
   realm_id    = keycloak_realm.employee.id
   client_id   = keycloak_openid_client.employee_backend_client.id
-  name        = "HotelHotelTag-Delete"
+  name        = "DocumentReadById"
 }
 
-resource "keycloak_role" "hotel_image_create_role" {
+resource "keycloak_role" "document_download_by_id" {
   realm_id    = keycloak_realm.employee.id
   client_id   = keycloak_openid_client.employee_backend_client.id
-  name        = "HotelImage-Create"
+  name        = "DocumentDownloadById"
 }
 
-resource "keycloak_role" "hotel_image_update_role" {
+# --- ENCRYPTION TYPE ----
+
+resource "keycloak_role" "encryption_type_read" {
   realm_id    = keycloak_realm.employee.id
   client_id   = keycloak_openid_client.employee_backend_client.id
-  name        = "HotelImage-Update"
+  name        = "EncryptionTypeRead"
 }
 
-resource "keycloak_role" "hotel_image_delete_role" {
+resource "keycloak_role" "encryption_type_read_by_id" {
   realm_id    = keycloak_realm.employee.id
   client_id   = keycloak_openid_client.employee_backend_client.id
-  name        = "HotelImage-Delete"
+  name        = "EncryptionTypeReadById"
 }
 
-resource "keycloak_role" "hotel_tag_create_role" {
+# --- FRAGMENT ----
+
+resource "keycloak_role" "fragment_create" {
   realm_id    = keycloak_realm.employee.id
   client_id   = keycloak_openid_client.employee_backend_client.id
-  name        = "HotelTag-Create"
+  name        = "FragmentCreate"
 }
 
-resource "keycloak_role" "hotel_tag_update_role" {
+resource "keycloak_role" "fragment_delete" {
   realm_id    = keycloak_realm.employee.id
   client_id   = keycloak_openid_client.employee_backend_client.id
-  name        = "HotelTag-Update"
+  name        = "FragmentDelete"
 }
 
-resource "keycloak_role" "hotel_tag_delete_role" {
+resource "keycloak_role" "fragment_read_by_id" {
   realm_id    = keycloak_realm.employee.id
   client_id   = keycloak_openid_client.employee_backend_client.id
-  name        = "HotelTag-Delete"
+  name        = "FragmentReadById"
 }
 
-resource "keycloak_role" "payment_create_role" {
+resource "keycloak_role" "fragment_read_by_document_id" {
   realm_id    = keycloak_realm.employee.id
   client_id   = keycloak_openid_client.employee_backend_client.id
-  name        = "Payment-Create"
+  name        = "FragmentReadByDocumentId"
 }
 
-resource "keycloak_role" "payment_delete_role" {
+# --- SECRET ----
+
+resource "keycloak_role" "secret_create" {
   realm_id    = keycloak_realm.employee.id
   client_id   = keycloak_openid_client.employee_backend_client.id
-  name        = "Payment-Delete"
+  name        = "SecretCreate"
 }
 
-resource "keycloak_role" "reservation_create_role" {
+resource "keycloak_role" "secret_delete" {
   realm_id    = keycloak_realm.employee.id
   client_id   = keycloak_openid_client.employee_backend_client.id
-  name        = "Reservation-Create"
+  name        = "SecretDelete"
 }
 
-resource "keycloak_role" "reservation_update_role" {
+resource "keycloak_role" "secret_read_by_id" {
   realm_id    = keycloak_realm.employee.id
   client_id   = keycloak_openid_client.employee_backend_client.id
-  name        = "Reservation-Update"
-}
-
-resource "keycloak_role" "reservation_delete_role" {
-  realm_id    = keycloak_realm.employee.id
-  client_id   = keycloak_openid_client.employee_backend_client.id
-  name        = "Reservation-Delete"
-}
-
-resource "keycloak_role" "room_create_role" {
-  realm_id    = keycloak_realm.employee.id
-  client_id   = keycloak_openid_client.employee_backend_client.id
-  name        = "Room-Create"
-}
-
-resource "keycloak_role" "room_update_role" {
-  realm_id    = keycloak_realm.employee.id
-  client_id   = keycloak_openid_client.employee_backend_client.id
-  name        = "Room-Update"
-}
-
-resource "keycloak_role" "room_delete_role" {
-  realm_id    = keycloak_realm.employee.id
-  client_id   = keycloak_openid_client.employee_backend_client.id
-  name        = "Room-Delete"
-}
-
-resource "keycloak_role" "room_image_create_role" {
-  realm_id    = keycloak_realm.employee.id
-  client_id   = keycloak_openid_client.employee_backend_client.id
-  name        = "RoomImage-Create"
-}
-
-resource "keycloak_role" "room_image_update_role" {
-  realm_id    = keycloak_realm.employee.id
-  client_id   = keycloak_openid_client.employee_backend_client.id
-  name        = "RoomImage-Update"
-}
-
-resource "keycloak_role" "room_image_delete_role" {
-  realm_id    = keycloak_realm.employee.id
-  client_id   = keycloak_openid_client.employee_backend_client.id
-  name        = "RoomImage-Delete"
-}
-
-resource "keycloak_role" "room_room_tag_create_role" {
-  realm_id    = keycloak_realm.employee.id
-  client_id   = keycloak_openid_client.employee_backend_client.id
-  name        = "RoomRoomTag-Create"
-}
-
-resource "keycloak_role" "room_room_tag_delete_role" {
-  realm_id    = keycloak_realm.employee.id
-  client_id   = keycloak_openid_client.employee_backend_client.id
-  name        = "RoomRoomTag-Delete"
-}
-
-resource "keycloak_role" "room_tag_create_role" {
-  realm_id    = keycloak_realm.employee.id
-  client_id   = keycloak_openid_client.employee_backend_client.id
-  name        = "RoomTag-Create"
-}
-
-resource "keycloak_role" "room_tag_update_role" {
-  realm_id    = keycloak_realm.employee.id
-  client_id   = keycloak_openid_client.employee_backend_client.id
-  name        = "RoomTag-Update"
-}
-
-resource "keycloak_role" "room_tag_delete_role" {
-  realm_id    = keycloak_realm.employee.id
-  client_id   = keycloak_openid_client.employee_backend_client.id
-  name        = "RoomTag-Delete"
-}
-
-resource "keycloak_role" "room_type_create_role" {
-  realm_id    = keycloak_realm.employee.id
-  client_id   = keycloak_openid_client.employee_backend_client.id
-  name        = "RoomType-Create"
-}
-
-resource "keycloak_role" "room_type_update_role" {
-  realm_id    = keycloak_realm.employee.id
-  client_id   = keycloak_openid_client.employee_backend_client.id
-  name        = "RoomType-Update"
-}
-
-resource "keycloak_role" "room_type_delete_role" {
-  realm_id    = keycloak_realm.employee.id
-  client_id   = keycloak_openid_client.employee_backend_client.id
-  name        = "RoomType-Delete"
+  name        = "SecretReadById"
 }

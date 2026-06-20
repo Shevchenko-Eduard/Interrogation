@@ -8,11 +8,11 @@ namespace Application.UseCases.SecretUseCases;
 public sealed class CreateSecretUseCase(
     ISecretRepository secretRepository,
     IUnitOfWork unitOfWork,
-    ISecretManager secretGenerator) : IAction<SecretDTOs.Inner.Create, SecretDTOs.Response.Create>
+    ISecretManager secretManager) : IAction<SecretDTOs.Inner.Create, SecretDTOs.Response.Create>
 {
     private readonly ISecretRepository _secretRepository = secretRepository;
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly ISecretManager _secretGenerator = secretGenerator;
+    private readonly ISecretManager _secretGenerator = secretManager;
     public async Task<SecretDTOs.Response.Create> Execute(SecretDTOs.Inner.Create input)
     {
         var secret = input.GetSecret(_secretGenerator);

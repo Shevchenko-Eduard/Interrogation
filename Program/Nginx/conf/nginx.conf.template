@@ -54,7 +54,7 @@ server {
     ssl_certificate_key /etc/nginx/certs/key.pem;
 
     location / {
-        limit_req zone=api burst=5 nodelay;
+        limit_req zone=api burst=20 nodelay;
 
         proxy_pass http://${HOST_AUTH}:${PORT_AUTH}/;
 

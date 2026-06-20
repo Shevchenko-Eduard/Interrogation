@@ -13,21 +13,21 @@ public class FragmentConf : IEntityTypeConfiguration<Fragment>
         #endregion
 
         #region pk
-        builder.HasKey(h => h.Id)
+        builder.HasKey(_ => _.Id)
             .HasName("fragment_id");
         #endregion
 
         #region property
 
-        builder.Property(h => h.DocumentId)
+        builder.Property(_ => _.DocumentId)
             .HasColumnName("document_id")
             .IsRequired();
 
-        builder.Property(h => h.MarkerName)
+        builder.Property(_ => _.MarkerName)
             .HasColumnName("marker_name")
             .IsRequired();
 
-        builder.Property(h => h.Value)
+        builder.Property(_ => _.Value)
             .HasColumnName("value")
             .IsRequired();
 
@@ -35,9 +35,9 @@ public class FragmentConf : IEntityTypeConfiguration<Fragment>
 
         #region fk
 
-        builder.HasOne(h => h.Document)
-            .WithMany(h => h.Fragments)
-            .HasForeignKey(h => h.DocumentId);
+        builder.HasOne(_ => _.Document)
+            .WithMany(_ => _.Fragments)
+            .HasForeignKey(_ => _.DocumentId);
 
         #endregion
 
@@ -45,7 +45,7 @@ public class FragmentConf : IEntityTypeConfiguration<Fragment>
         #endregion
 
         #region index
-        builder.HasIndex(h => h.MarkerName)
+        builder.HasIndex(_ => new { _.DocumentId, _.MarkerName })
             .HasDatabaseName("uq__fragments__marker_name")
             .IsUnique();
         #endregion

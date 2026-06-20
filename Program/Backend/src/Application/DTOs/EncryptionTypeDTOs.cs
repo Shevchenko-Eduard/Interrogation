@@ -7,6 +7,9 @@ public static class EncryptionTypeDTOs
     public static class Inner
     {
         public record ReadAll();
+        public record ReadById(
+            int Id
+        );
     }
     public static class Request
     {

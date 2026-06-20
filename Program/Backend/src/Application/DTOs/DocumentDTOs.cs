@@ -36,6 +36,10 @@ public static class DocumentDTOs
         public record ReadById(
             int Id
         );
+        public record DownloadById(
+            int Id
+        );
+        public record Read();
         public record Update(
             int Id,
             string? Name,
@@ -63,6 +67,10 @@ public static class DocumentDTOs
             int EncryptionTypeId,
             int SecretId,
             string Name,
+            string? Description
+        );
+        public record Update(
+            string? Name,
             string? Description
         );
     }
@@ -97,18 +105,38 @@ public static class DocumentDTOs
         public record Read(
             int Id,
             int EncryptionTypeId,
+            string CreatorId,
+            string Name,
+            string? Description,
+            string ContentType,
+            string Extension,
+            DateTimeOffset DateOfCreate
+        )
+        {
+            public static Read FromDocument(Document document) => new(
+                    Id: document.Id,
+                    EncryptionTypeId: document.EncryptionTypeId,
+                    CreatorId: document.CreatorId,
+                    Name: document.Name,
+                    Description: document.Description,
+                    ContentType: document.ContentType,
+                    Extension: document.Extension,
+                    DateOfCreate: document.DateOfCreate
+                );
+        }
+        public record ReadById(
+            int Id,
+            int EncryptionTypeId,
             int SecretId,
             string CreatorId,
             string Name,
             string? Description,
             string ContentType,
             string Extension,
-            string DocumentKey,
-            DateTimeOffset DateOfCreate,
-            Stream Stream
+            DateTimeOffset DateOfCreate
         )
         {
-            public static Read FromDocument(Document document, Stream stream) => new(
+            public static ReadById FromDocument(Document document) => new(
                     Id: document.Id,
                     EncryptionTypeId: document.EncryptionTypeId,
                     SecretId: document.SecretId,
@@ -117,8 +145,20 @@ public static class DocumentDTOs
                     Description: document.Description,
                     ContentType: document.ContentType,
                     Extension: document.Extension,
-                    DocumentKey: document.DocumentKey,
-                    DateOfCreate: document.DateOfCreate,
+                    DateOfCreate: document.DateOfCreate
+                );
+        }
+        public record DownloadById(
+            string Name,
+            string ContentType,
+            string Extension,
+            Stream Stream
+        )
+        {
+            public static DownloadById FromDocument(Document document, Stream stream) => new(
+                    Name: document.Name,
+                    ContentType: document.ContentType,
+                    Extension: document.Extension,
                     Stream: stream
                 );
         }

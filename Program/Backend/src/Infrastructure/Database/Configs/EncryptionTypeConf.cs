@@ -13,12 +13,12 @@ public class EncryptionTypeConf : IEntityTypeConfiguration<EncryptionType>
         #endregion
 
         #region pk
-        builder.HasKey(h => h.Id)
+        builder.HasKey(_ => _.Id)
             .HasName("encryption_type_id");
         #endregion
 
         #region property
-        builder.Property(h => h.Name)
+        builder.Property(_ => _.Name)
             .HasColumnName("name")
             .HasMaxLength(100)
             .IsRequired();
@@ -31,7 +31,7 @@ public class EncryptionTypeConf : IEntityTypeConfiguration<EncryptionType>
         #endregion
 
         #region index
-        builder.HasIndex(h => h.Name)
+        builder.HasIndex(_ => _.Name)
             .HasDatabaseName("uq__encryption_types__name")
             .IsUnique();
         #endregion

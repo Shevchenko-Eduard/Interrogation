@@ -13,12 +13,12 @@ public class SecretConf : IEntityTypeConfiguration<Secret>
         #endregion
 
         #region pk
-        builder.HasKey(h => h.Id)
+        builder.HasKey(_ => _.Id)
             .HasName("secret_id");
         #endregion
 
         #region property
-        builder.Property(h => h.Value)
+        builder.Property(_ => _.Value)
             .HasColumnName("value")
             .IsRequired();
         #endregion
