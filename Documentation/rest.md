@@ -6,15 +6,15 @@
 
 Получить данные о каждои фрагменте определенного документа
 
-### **GET** - /v1/documents/{<addr title="document id">***did***</addr>}/fragment/{<addr title="fragment id">***fid***</addr>}
+### **GET** - /v1/documents/fragment/{id}
 
-Получить конкретный фрагмент конкретного документа
+Получить конкретный фрагмент
 
-### **POST** - /v1/documents/{id}/fragment
+### **POST** - /v1/documents/fragment
 
 Создать новый фрагмент
 
-### **DELETE** - /v1/documents/{<addr title="document id">***did***</addr>}/fragment/{<addr title="fragment id">***fid***</addr>}
+### **DELETE** - /v1/documents/fragment/{id}
 
 Удалить фрагмент
 
@@ -48,7 +48,7 @@
 
 ## secret
 
-### **GET** - /v1/documents/encryption/secrets/{<addr title="secret id">***sid***</addr>}
+### **GET** - /v1/documents/encryption/secrets/{id}
 
 Получить ключ шифрования файла
 
@@ -56,6 +56,6 @@
 
 Создать ключ шифрования
 
-### **DELETE** - /v1/documents/encryption/secrets/{<addr title="secret id">***sid***</addr>}
+### **DELETE** - /v1/documents/encryption/secrets/{id}
 
 Удалить ключ шифрования

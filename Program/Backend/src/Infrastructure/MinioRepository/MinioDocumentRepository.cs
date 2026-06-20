@@ -2,8 +2,8 @@ using Domain.Interfaces.Repositories.BaseRepository;
 
 namespace Infrastructure.MinioRepository;
 
-public class MinioHotelImageRepository(
-    IS3Repository minioRepository) : IDocumentS3Repository
+public class MinioDocumentRepository(
+    IS3Repository minioRepository) : IS3DocumentRepository
 {
     private readonly IS3Repository _minioRepository = minioRepository;
     private readonly string bucket = "documents";

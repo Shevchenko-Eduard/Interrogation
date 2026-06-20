@@ -9,7 +9,7 @@ public abstract class EnumObjectAbstract<T> where T : EnumObjectAbstract<T>
     public int Id { get; }
     public static ReadOnlyCollection<T> All { get { return new(_all.Value.ToList()); } }
     private static Lazy<HashSet<T>> _all = UpdateAll();
-    private static int _nextId = -1;
+    private static int _nextId = 0;
     #endregion
     #region Constructors
     protected EnumObjectAbstract()

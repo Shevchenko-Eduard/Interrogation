@@ -9,11 +9,11 @@ namespace Application.UseCases.DocumentUseCases;
 
 public class DeleteDocumentUseCase(
     IDocumentRepository documentRepository,
-    IDocumentS3Repository documentS3Repository,
+    IS3DocumentRepository documentS3Repository,
     IUnitOfWork unitOfWork) : IAction<DocumentDTOs.Inner.Delete>
 {
     private readonly IDocumentRepository _documentRepository = documentRepository;
-    private readonly IDocumentS3Repository _documentS3Repository = documentS3Repository;
+    private readonly IS3DocumentRepository _documentS3Repository = documentS3Repository;
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     public async Task Execute(DocumentDTOs.Inner.Delete input)
     {

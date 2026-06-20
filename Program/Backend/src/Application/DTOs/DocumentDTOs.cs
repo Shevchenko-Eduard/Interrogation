@@ -59,7 +59,12 @@ public static class DocumentDTOs
     }
     public static class Request
     {
-
+        public record Create(
+            int EncryptionTypeId,
+            int SecretId,
+            string Name,
+            string? Description
+        );
     }
     public static class Response
     {

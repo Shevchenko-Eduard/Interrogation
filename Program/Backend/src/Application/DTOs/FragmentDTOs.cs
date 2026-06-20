@@ -26,10 +26,13 @@ public static class FragmentDTOs
         public record ReadById(
             int Id
         );
+        public record ReadByDocumentId(
+            int DocumentId
+        );
     }
     public static class Request
     {
-
+        
     }
     public static class Response
     {

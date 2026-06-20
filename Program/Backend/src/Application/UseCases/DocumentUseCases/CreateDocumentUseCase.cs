@@ -9,13 +9,13 @@ namespace Application.UseCases.DocumentUseCases;
 
 public class CreateDocumentUseCase(
     IDocumentRepository documentRepository,
-    IDocumentS3Repository documentS3Repository,
+    IS3DocumentRepository documentS3Repository,
     IUnitOfWork unitOfWork,
     IClock clock,
     IDocumentKeyManager documentKeyManager) : IAction<DocumentDTOs.Inner.Create, DocumentDTOs.Response.Create>
 {
     private readonly IDocumentRepository _documentRepository = documentRepository;
-    private readonly IDocumentS3Repository _documentS3Repository = documentS3Repository;
+    private readonly IS3DocumentRepository _documentS3Repository = documentS3Repository;
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly IClock _clock = clock;
     private readonly IDocumentKeyManager _documentKeyManager = documentKeyManager;
