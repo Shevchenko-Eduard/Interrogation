@@ -22,9 +22,9 @@ public class SecretController(
 
     [HttpPost("v1/documents/encryption/secrets", Name = "SecretCreate")]
     [Authorize(Roles = "SecretCreate")]
-    public async Task<IActionResult> Create()
+    public async Task<IActionResult> Create([FromBody] SecretDTOs.Request.Create input)
     {
-        SecretDTOs.Inner.Create create = new();
+        SecretDTOs.Inner.Create create = new(NumberOfBytes: input.NumberOfBytes);
         CreateSecretUseCase useCase = new(
             secretRepository: _secretRepository,
             unitOfWork: _unitOfWork,

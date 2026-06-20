@@ -2,5 +2,5 @@ namespace Domain.Interfaces;
 
 public interface ISecretManager
 {
-    string New();
+    string New(int numberOfBytes);
 }

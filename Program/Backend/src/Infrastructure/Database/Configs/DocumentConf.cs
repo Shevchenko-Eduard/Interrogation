@@ -65,10 +65,6 @@ public class DocumentConf : IEntityTypeConfiguration<Document>
         builder.HasOne(_ => _.EncryptionType)
             .WithMany(_ => _.Documents)
             .HasForeignKey(_ => _.EncryptionTypeId);
-
-        // builder.HasMany(_ => _.Fragments)
-        //     .WithOne(_ => _.Document)
-        //     .HasForeignKey(_ => _.DocumentId);
         #endregion
 
         #region ignore

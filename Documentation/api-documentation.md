@@ -2024,6 +2024,7 @@ Keycloak ( Scopes: openid profile roles )
 ```shell
 # You can also use wget
 curl -X POST https://api.docker.local/v1/documents/encryption/secrets \
+  -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer {access-token}'
 
 ```
@@ -2031,19 +2032,23 @@ curl -X POST https://api.docker.local/v1/documents/encryption/secrets \
 ```http
 POST https://api.docker.local/v1/documents/encryption/secrets HTTP/1.1
 Host: api.docker.local
+Content-Type: application/json
 
 ```
 
 ```javascript
-
+const inputBody = '{
+  "numberOfBytes": 0
+}';
 const headers = {
+  'Content-Type':'application/json',
   'Authorization':'Bearer {access-token}'
 };
 
 fetch('https://api.docker.local/v1/documents/encryption/secrets',
 {
   method: 'POST',
-
+  body: inputBody,
   headers: headers
 })
 .then(function(res) {
@@ -2059,6 +2064,7 @@ require 'rest-client'
 require 'json'
 
 headers = {
+  'Content-Type' => 'application/json',
   'Authorization' => 'Bearer {access-token}'
 }
 
@@ -2073,6 +2079,7 @@ p JSON.parse(result)
 ```python
 import requests
 headers = {
+  'Content-Type': 'application/json',
   'Authorization': 'Bearer {access-token}'
 }
 
@@ -2088,6 +2095,7 @@ print(r.json())
 require 'vendor/autoload.php';
 
 $headers = array(
+    'Content-Type' => 'application/json',
     'Authorization' => 'Bearer {access-token}',
 );
 
@@ -2141,6 +2149,7 @@ import (
 func main() {
 
     headers := map[string][]string{
+        "Content-Type": []string{"application/json"},
         "Authorization": []string{"Bearer {access-token}"},
     }
 
@@ -2156,6 +2165,20 @@ func main() {
 ```
 
 `POST /v1/documents/encryption/secrets`
+
+> Body parameter
+
+```json
+{
+  "numberOfBytes": 0
+}
+```
+
+<h3 id="secretcreate-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|body|body|[Application.DTOs.SecretDTOs.Request.Create](#schemaapplication.dtos.secretdtos.request.create)|false|none|
 
 <h3 id="secretcreate-responses">Responses</h3>
 
@@ -2533,4 +2556,24 @@ Keycloak ( Scopes: openid profile roles )
 |documentId|integer(int32)|false|none|none|
 |markerName|string¦null|false|none|none|
 |value|string¦null|false|none|none|
+
+<h2 id="tocS_Application.DTOs.SecretDTOs.Request.Create">Application.DTOs.SecretDTOs.Request.Create</h2>
+<!-- backwards compatibility -->
+<a id="schemaapplication.dtos.secretdtos.request.create"></a>
+<a id="schema_Application.DTOs.SecretDTOs.Request.Create"></a>
+<a id="tocSapplication.dtos.secretdtos.request.create"></a>
+<a id="tocsapplication.dtos.secretdtos.request.create"></a>
+
+```json
+{
+  "numberOfBytes": 0
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|numberOfBytes|integer(int32)|false|none|none|
 

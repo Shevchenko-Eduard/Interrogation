@@ -8,9 +8,11 @@ public static class SecretDTOs
 {
     public static class Inner
     {
-        public record Create()
+        public record Create(
+            int NumberOfBytes
+        )
         {
-            public Secret GetSecret(ISecretManager secretGenerator) => new(secretGenerator);
+            public Secret GetSecret(ISecretManager secretGenerator) => new(secretGenerator.New(NumberOfBytes));
         }
         public record Delete(
             int Id
@@ -28,7 +30,9 @@ public static class SecretDTOs
     }
     public static class Request
     {
-
+        public record Create(
+            int NumberOfBytes
+        );
     }
     public static class Response
     {
