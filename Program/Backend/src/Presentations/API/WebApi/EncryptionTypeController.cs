@@ -1,10 +1,6 @@
 using Application.DTOs;
-using Application.Interfaces;
-using Application.UseCases.DocumentUseCases;
 using Application.UseCases.EncryptionTypeUseCases;
-using Domain.Interfaces;
 using Domain.Interfaces.Repositories;
-using Domain.Interfaces.Repositories.BaseRepository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

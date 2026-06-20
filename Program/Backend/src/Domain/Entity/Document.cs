@@ -14,6 +14,7 @@ public sealed class Document
     public DateTimeOffset DateOfCreate { get; init; }
     public string ContentType { get; init; }
     public string Extension { get; init; }
+    public string? EncryptionAlgorithm { get; init; }
     public Secret? Secret { get; set; }
     public EncryptionType? EncryptionType { get; set; }
     public ICollection<Fragment>? Fragments { get; set; }
@@ -30,6 +31,7 @@ public sealed class Document
         string? description,
         string contentType,
         string extension,
+        string? encryptionAlgorithm,
         IDocumentKeyManager documentKeyGenerator,
         IClock clock
     )
@@ -44,6 +46,7 @@ public sealed class Document
         Name = name;
         Description = description;
         DateOfCreate = _clock.Now;
+        EncryptionAlgorithm = encryptionAlgorithm;
         ContentType = contentType;
         Extension = extension;
     }

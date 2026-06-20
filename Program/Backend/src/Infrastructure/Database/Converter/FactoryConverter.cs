@@ -1,5 +1,3 @@
-using Domain.Entity;
-
 namespace Infrastructure.Database.Converter;
 
 public static class FactoryConverter

@@ -1,7 +1,6 @@
 using System.Linq.Expressions;
 using Domain.Entity;
 using Domain.Interfaces.Repositories;
-using Domain.Interfaces.Repositories.BaseRepository.Crud;
 using Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 

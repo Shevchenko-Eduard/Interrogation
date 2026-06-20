@@ -52,6 +52,7 @@ public class DocumentController(
             Description: request.Description,
             ContentType: file.ContentType,
             Extension: Path.GetExtension(file.FileName),
+            EncryptionAlgorithm: request.EncryptionAlgorithm,
             Stream: file.OpenReadStream());
 
         var result = await useCase.Execute(innerRequest);
@@ -105,10 +106,9 @@ public class DocumentController(
     {
         DocumentDTOs.Inner.ReadById request = new(Id: id);
         var useCase = new ReadByIdDocumentUseCase(
-            documentRepository: _documentRepository,
-            s3DocumentRepository: _s3DocumentRepository
+            documentRepository: _documentRepository
         );
-        DocumentDTOs.Response.ReadById result = await useCase.Ask(request);
+        DocumentDTOs.Response.Read result = await useCase.Ask(request);
         return Ok(result);
     }
     

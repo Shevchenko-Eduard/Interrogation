@@ -2,8 +2,6 @@ using API.Schema;
 using Infrastructure.Database;
 using Infrastructure.Database.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 
 namespace API.Services;

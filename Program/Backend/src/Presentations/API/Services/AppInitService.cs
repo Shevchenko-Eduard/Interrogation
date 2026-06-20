@@ -1,8 +1,5 @@
 using API.DependencyInjection;
 using LibWeb.Services;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace API.Services;
 

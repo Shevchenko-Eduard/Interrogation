@@ -1,10 +1,10 @@
 #!/bin/bash
 
 touch ./Program/.env
-ln -s ./Program/.env ./Program/Backend/.env
-ln -s ./Program/.env ./Program/Frontend/.env
-ln -s ./Program/.env ./Program/Nginx/.env
-ln -s ./Program/.env ./Program/Keycloak/.env
+ln -s ../.env ./Program/Backend/.env
+ln -s ../.env ./Program/Frontend/.env
+ln -s ../.env ./Program/Nginx/.env
+ln -s ../.env ./Program/Keycloak/.env
 
 cat << EOF > ./Program/.env
 SERVER_DOMAIN="docker.local"
@@ -19,7 +19,7 @@ KC_POSTGRES_PORT=5435
 
 # keycloak
 KEYCLOAK_HTTP_PORT=7080
-KEYCLOAK_HOST="auth.${SERVER_DOMAIN}"
+KEYCLOAK_HOST="auth.\${SERVER_DOMAIN}"
 ADMIN_USERNAME="admin"
 ADMIN_PASSWORD="admin"
 
@@ -37,7 +37,7 @@ KC_FRONTEND_CLIENT_NAME="Interrogation"
 KC_SMPT_HOST="smtp.gmail.com"
 KC_SMPT_PORT=587
 KC_SMPT_USERNAME="__________@gmail.com"
-KC_SMPT_FROM=${KC_SMPT_USERNAME}
+KC_SMPT_FROM=\${KC_SMPT_USERNAME}
 KC_SMPT_PASSWORD="__________"
 
 # --- server
@@ -49,7 +49,7 @@ SERVER_POSTGRES_PASSWORD="hotel"
 SERVER_POSTGRES_PORT=5433
 
 # auth with keycloak
-KEYCLOAK_AUTH_SERVER_URL=https://${KEYCLOAK_HOST}/
+KEYCLOAK_AUTH_SERVER_URL=https://\${KEYCLOAK_HOST}/
 
 # asp.net core
 API_PORT=5252
@@ -57,7 +57,7 @@ ASPNETCORE_ENVIRONMENT=Development
 ASPNETCORE_SCHEMA=http
 ASPNETCORE_HOST=*
 ASPNETCORE_PORT=8000
-ASPNETCORE_URLS=${ASPNETCORE_SCHEMA}://${ASPNETCORE_HOST}:${ASPNETCORE_PORT}
+ASPNETCORE_URLS=\${ASPNETCORE_SCHEMA}://\${ASPNETCORE_HOST}:\${ASPNETCORE_PORT}
 
 MINIO_HOST=minio
 
@@ -73,6 +73,6 @@ MINIO_ROOT_USER=minio
 # nginx
 NGINX_HTTP_PORT=80
 NGINX_HTTPS_PORT=443
-NGINX_DOMAIN=${SERVER_DOMAIN}
+NGINX_DOMAIN=\${SERVER_DOMAIN}
 
 EOF

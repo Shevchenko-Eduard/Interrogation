@@ -1,6 +1,4 @@
 using API.Schema;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Minio;
 
 namespace API.Services;

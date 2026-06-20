@@ -1,6 +1,4 @@
-using System.Runtime.InteropServices.Java;
 using Domain.Entity;
-using Domain.Interfaces.Repositories;
 
 namespace Application.DTOs;
 

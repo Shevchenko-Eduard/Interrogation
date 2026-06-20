@@ -70,7 +70,8 @@ const inputBody = '{
   "EncryptionTypeId": 0,
   "SecretId": 0,
   "Name": "string",
-  "Description": "string"
+  "Description": "string",
+  "EncryptionAlgorithm": "string"
 }';
 const headers = {
   'Content-Type':'multipart/form-data',
@@ -206,6 +207,7 @@ EncryptionTypeId: 0
 SecretId: 0
 Name: string
 Description: string
+EncryptionAlgorithm: string
 
 ```
 
@@ -219,6 +221,7 @@ Description: string
 |» SecretId|body|integer(int32)|false|none|
 |» Name|body|string|false|none|
 |» Description|body|string|false|none|
+|» EncryptionAlgorithm|body|string|false|none|
 
 <h3 id="documentcreate-responses">Responses</h3>
 

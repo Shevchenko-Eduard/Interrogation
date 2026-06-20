@@ -15,6 +15,7 @@ public static class DocumentDTOs
             string? Description,
             string ContentType,
             string Extension,
+            string? EncryptionAlgorithm,
             Stream Stream
         )
         {
@@ -26,9 +27,9 @@ public static class DocumentDTOs
                     description: Description,
                     contentType: ContentType,
                     extension: Extension,
+                    encryptionAlgorithm: EncryptionAlgorithm,
                     documentKeyGenerator: documentKeyGenerator,
-                    clock: clock
-                );
+                    clock: clock);
         }
         public record Delete(
             int Id
@@ -67,7 +68,8 @@ public static class DocumentDTOs
             int EncryptionTypeId,
             int SecretId,
             string Name,
-            string? Description
+            string? Description,
+            string? EncryptionAlgorithm
         );
         public record Update(
             string? Name,
@@ -86,6 +88,7 @@ public static class DocumentDTOs
             string ContentType,
             string Extension,
             string DocumentKey,
+            string? EncryptionAlgorithm,
             DateTimeOffset DateOfCreate
         )
         {
@@ -99,8 +102,8 @@ public static class DocumentDTOs
                     ContentType: document.ContentType,
                     Extension: document.Extension,
                     DocumentKey: document.DocumentKey,
-                    DateOfCreate: document.DateOfCreate
-                );
+                    EncryptionAlgorithm: document.EncryptionAlgorithm,
+                    DateOfCreate: document.DateOfCreate);
         }
         public record Read(
             int Id,
@@ -110,6 +113,7 @@ public static class DocumentDTOs
             string? Description,
             string ContentType,
             string Extension,
+            string? EncryptionAlgorithm,
             DateTimeOffset DateOfCreate
         )
         {
@@ -121,30 +125,7 @@ public static class DocumentDTOs
                     Description: document.Description,
                     ContentType: document.ContentType,
                     Extension: document.Extension,
-                    DateOfCreate: document.DateOfCreate
-                );
-        }
-        public record ReadById(
-            int Id,
-            int EncryptionTypeId,
-            int SecretId,
-            string CreatorId,
-            string Name,
-            string? Description,
-            string ContentType,
-            string Extension,
-            DateTimeOffset DateOfCreate
-        )
-        {
-            public static ReadById FromDocument(Document document) => new(
-                    Id: document.Id,
-                    EncryptionTypeId: document.EncryptionTypeId,
-                    SecretId: document.SecretId,
-                    CreatorId: document.CreatorId,
-                    Name: document.Name,
-                    Description: document.Description,
-                    ContentType: document.ContentType,
-                    Extension: document.Extension,
+                    EncryptionAlgorithm: document.EncryptionAlgorithm,
                     DateOfCreate: document.DateOfCreate
                 );
         }

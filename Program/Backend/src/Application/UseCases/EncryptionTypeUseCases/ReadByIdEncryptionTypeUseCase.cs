@@ -1,6 +1,5 @@
 using Application.DTOs;
 using Application.Interfaces;
-using Domain.Entity;
 using Domain.Interfaces.Repositories;
 
 namespace Application.UseCases.EncryptionTypeUseCases;

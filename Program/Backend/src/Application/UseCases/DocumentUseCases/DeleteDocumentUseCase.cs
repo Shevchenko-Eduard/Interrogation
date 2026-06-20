@@ -1,7 +1,5 @@
 using Application.DTOs;
 using Application.Interfaces;
-using Domain.Entity;
-using Domain.Interfaces;
 using Domain.Interfaces.Repositories;
 using Domain.Interfaces.Repositories.BaseRepository;
 

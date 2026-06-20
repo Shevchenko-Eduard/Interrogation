@@ -1,5 +1,3 @@
-using Domain.Interfaces;
-
 namespace Domain.Entity;
 
 public sealed class Secret

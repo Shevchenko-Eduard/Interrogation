@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Hosting;
-
 namespace LibWeb;
 
 public class HostEnvironment(IHostEnvironment hostEnvironment) : Infrastructure.Interfaces.IHostEnvironment
