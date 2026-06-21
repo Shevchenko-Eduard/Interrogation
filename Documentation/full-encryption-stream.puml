@@ -1,0 +1,38 @@
+@startuml full-encryption-stream
+
+skinparam actorStyle awesome
+
+actor User as U
+participant Client as C
+participant Server as S
+database Database as DB
+
+
+U -> C: Отправляет файл
+
+par Работа с ключами шифрования
+    C -> S: Запрашивает ключ шифрования
+    S -> S: Генерирует ключ шифрования
+    S -> DB: Сохраняет ключ шифрования
+    note left
+        Ключи хранятся
+        в защищенном хранилище
+    end note
+    S --> C: Отправляет ключ шифрования
+end
+
+par Шифрование и отправка файла
+    C -> C: Шифрует файл
+    note right
+        Шифрование происходит
+        на стороне клиента
+    end note
+    C -> S: Отправляет зашифрованный файл
+
+    S -> DB: Сохраняет зашифрованный файл
+    S --> C: Подтверждение получения
+end
+
+C --> U: Подтверждение отправки
+
+@enduml

@@ -2,7 +2,7 @@
 
 touch ./Program/.env
 ln -s ../.env ./Program/Backend/.env
-ln -s ../.env ./Program/Frontend/.env
+# ln -s ../.env ./Program/Frontend/.env
 ln -s ../.env ./Program/Nginx/.env
 ln -s ../.env ./Program/Keycloak/.env
 
