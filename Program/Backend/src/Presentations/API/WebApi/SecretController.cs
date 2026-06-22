@@ -11,7 +11,8 @@ namespace API.WebApi;
 [ApiController]
 [Route("")]
 [Authorize]
-public class SecretController(
+#pragma warning disable CA1812 // Избегайте внутренних классов, не имеющих экземпляры
+public sealed class SecretController(
     IUnitOfWork unitOfWork,
     ISecretRepository secretRepository,
     ISecretManager secretManager) : ControllerBase
@@ -29,7 +30,7 @@ public class SecretController(
             secretRepository: _secretRepository,
             unitOfWork: _unitOfWork,
             secretManager: _secretManager);
-        var result = await useCase.Execute(create);
+        var result = await useCase.Execute(create).ConfigureAwait(false);
         return Ok(result);
     }
 
@@ -39,7 +40,7 @@ public class SecretController(
     {
         DeleteSecretUseCase useCase = new(secretRepository: _secretRepository, unitOfWork: _unitOfWork);
         SecretDTOs.Inner.Delete delete = new(Id: id);
-        await useCase.Execute(delete);
+        await useCase.Execute(delete).ConfigureAwait(false);
         return Ok($"Секрет {id} удален.");
     }
     [HttpGet("v1/documents/encryption/secrets/{id:int}", Name = "SecretReadById")]
@@ -48,7 +49,7 @@ public class SecretController(
     {
         ReadByIdSecretUseCase useCase = new(secretRepository: _secretRepository);
         SecretDTOs.Inner.ReadById readById = new(Id: id);
-        SecretDTOs.Response.Read read = await useCase.Ask(readById);
+        SecretDTOs.Response.Read read = await useCase.Ask(readById).ConfigureAwait(false);
         return Ok(read);
     }
 }

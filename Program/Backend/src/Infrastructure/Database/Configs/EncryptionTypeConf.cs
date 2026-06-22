@@ -8,6 +8,8 @@ public class EncryptionTypeConf : IEntityTypeConfiguration<EncryptionType>
 {
     public void Configure(EntityTypeBuilder<EncryptionType> builder)
     {
+        ArgumentNullException.ThrowIfNull(builder);
+
         #region table
         builder.ToTable("encryption_types");
         #endregion

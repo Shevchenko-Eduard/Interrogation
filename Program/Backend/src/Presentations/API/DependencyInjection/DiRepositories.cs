@@ -6,7 +6,7 @@ using Infrastructure.MinioRepository;
 
 namespace API.DependencyInjection;
 
-public static partial class DependencyInjectionConfig
+internal static partial class DependencyInjectionConfig
 {
     public static IServiceCollection AddRepositories(this IServiceCollection services)
     {

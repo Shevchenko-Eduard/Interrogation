@@ -8,6 +8,8 @@ public class SecretConf : IEntityTypeConfiguration<Secret>
 {
     public void Configure(EntityTypeBuilder<Secret> builder)
     {
+        ArgumentNullException.ThrowIfNull(builder);
+
         #region table
         builder.ToTable("secrets");
         #endregion

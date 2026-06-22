@@ -20,6 +20,8 @@
     <!-- Наивысший уровень анализа кода для выявления потенциальных проблем -->
     <AnalysisLevel>latest</AnalysisLevel>
 
+    <!-- <AnalysisMode>All</AnalysisMode> -->
+
     <!-- Информация об авторе проекта -->
     <Authors>ShEduard</Authors>
 

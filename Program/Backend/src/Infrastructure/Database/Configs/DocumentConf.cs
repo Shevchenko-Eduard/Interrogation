@@ -8,6 +8,8 @@ public class DocumentConf : IEntityTypeConfiguration<Document>
 {
     public void Configure(EntityTypeBuilder<Document> builder)
     {
+        ArgumentNullException.ThrowIfNull(builder);
+
         #region table
         builder.ToTable("documents");
         #endregion

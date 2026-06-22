@@ -13,9 +13,10 @@ public class CreateFragmentUseCase(
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     public async Task<FragmentDTOs.Response.Create> Execute(FragmentDTOs.Inner.Create input)
     {
+        ArgumentNullException.ThrowIfNull(input);
         Fragment fragment = input.GetFragment();
-        await _fragmentRepository.AddAsync(fragment);
-        await _unitOfWork.SaveChangesAsync();
+        await _fragmentRepository.AddAsync(fragment).ConfigureAwait(false);
+        await _unitOfWork.SaveChangesAsync().ConfigureAwait(false);
         return FragmentDTOs.Response.Create.FromFragment(fragment);
     }
 }

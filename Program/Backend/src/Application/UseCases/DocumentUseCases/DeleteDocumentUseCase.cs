@@ -15,19 +15,20 @@ public class DeleteDocumentUseCase(
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     public async Task Execute(DocumentDTOs.Inner.Delete input)
     {
+        ArgumentNullException.ThrowIfNull(input);
         try
         {
-            await _unitOfWork.BeginTransactionAsync();
-            string documentKey = await _documentRepository.GetDocumentKeyByIdAsync(input.Id)
+            await _unitOfWork.BeginTransactionAsync().ConfigureAwait(false);
+            string documentKey = await _documentRepository.GetDocumentKeyByIdAsync(input.Id).ConfigureAwait(false)
                 ?? throw new Exception($"Документа с таким Id:{input.Id} не существует");
-            await _documentRepository.DeleteAsync(input.Id);
-            await _documentS3Repository.DeleteAsync(documentKey);
-            await _unitOfWork.SaveChangesAsync();
-            await _unitOfWork.CommitTransactionAsync();
+            await _documentRepository.DeleteAsync(input.Id).ConfigureAwait(false);
+            await _documentS3Repository.DeleteAsync(documentKey).ConfigureAwait(false);
+            await _unitOfWork.SaveChangesAsync().ConfigureAwait(false);
+            await _unitOfWork.CommitTransactionAsync().ConfigureAwait(false);
         }
         catch
         {
-            await _unitOfWork.RollbackTransactionAsync();
+            await _unitOfWork.RollbackTransactionAsync().ConfigureAwait(false);
             throw;
         }
     }

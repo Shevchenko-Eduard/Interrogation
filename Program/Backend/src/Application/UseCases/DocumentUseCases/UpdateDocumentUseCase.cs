@@ -10,10 +10,11 @@ public class UpdateDocumentUseCase(IUnitOfWork unitOfWork, IDocumentRepository d
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     public async Task Execute(DocumentDTOs.Inner.Update input)
     {
-        var document = await _documentRepository.GetByIdAsync(input.Id)
+        ArgumentNullException.ThrowIfNull(input);
+        var document = await _documentRepository.GetByIdAsync(input.Id).ConfigureAwait(false)
             ?? throw new Exception($"Документа с таким Id:{input.Id} не существует.");
         document = input.GetDocument(document: document);
-        await _documentRepository.UpdateAsync(document);
-        await _unitOfWork.SaveChangesAsync();
+        await _documentRepository.UpdateAsync(document).ConfigureAwait(false);
+        await _unitOfWork.SaveChangesAsync().ConfigureAwait(false);
     }
 }

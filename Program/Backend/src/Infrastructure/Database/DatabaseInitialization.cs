@@ -22,14 +22,14 @@ public class DatabaseInitialization(
             // Всегда используем миграции в Production
             if (_hostEnvironment.IsProduction())
             {
-                await _context.Database.MigrateAsync(cancellationToken);
+                await _context.Database.MigrateAsync(cancellationToken).ConfigureAwait(false);
             }
             else
             {
                 // Для Development можно использовать EnsureCreatedAsync для скорости
                 try
                 {
-                    var created = await _context.Database.EnsureCreatedAsync(cancellationToken);
+                    var created = await _context.Database.EnsureCreatedAsync(cancellationToken).ConfigureAwait(false);
                     if (created && _context.Database.HasPendingModelChanges())
                     {
                         _logger?.LogWarning("Database has pending model changes. Consider creating a migration.");

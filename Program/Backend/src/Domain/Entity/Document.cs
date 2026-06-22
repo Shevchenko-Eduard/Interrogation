@@ -17,7 +17,7 @@ public sealed class Document
     public string? EncryptionAlgorithm { get; init; }
     public Secret? Secret { get; set; }
     public EncryptionType? EncryptionType { get; set; }
-    public ICollection<Fragment>? Fragments { get; set; }
+    public ICollection<Fragment>? Fragments { get; private set; }
     private readonly IDocumentKeyManager _documentKeyGenerator;
     private readonly IClock _clock;
 #pragma warning disable CS9264, CS8618
@@ -41,7 +41,7 @@ public sealed class Document
 
         EncryptionTypeId = encryptionTypeId;
         SecretId = secretId;
-        DocumentKey = _documentKeyGenerator.New();
+        DocumentKey = _documentKeyGenerator.Create();
         CreatorId = creatorId;
         Name = name;
         Description = description;

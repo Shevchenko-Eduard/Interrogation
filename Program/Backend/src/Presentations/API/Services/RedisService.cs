@@ -10,7 +10,7 @@ namespace API.Services;
 /// Redis__InstanceName (опционально),
 /// Redis__Password (опционально)
 /// </summary>
-public static class RedisService
+internal static class RedisService
 {
     public static IServiceCollection AddRedis(this IServiceCollection services, IConfiguration configuration)
     {

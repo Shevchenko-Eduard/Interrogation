@@ -4,7 +4,7 @@ using Minio.DataModel.Args;
 
 namespace Infrastructure.MinioRepository;
 
-public class MinioRepository(
+public sealed class MinioRepository(
     IMinioClient minioClient) : IS3Repository
 {
     private readonly IMinioClient _minioClient = minioClient;
@@ -14,7 +14,7 @@ public class MinioRepository(
             .WithBucket(bucket)
             .WithObject(path);
 
-        await _minioClient.RemoveObjectAsync(removeArgs);
+        await _minioClient.RemoveObjectAsync(removeArgs).ConfigureAwait(false);
     }
 
     public async Task<Stream> DownloadAsync(string path, string bucket)
@@ -25,7 +25,7 @@ public class MinioRepository(
             .WithObject(path)
             .WithCallbackStream(stream => stream.CopyToAsync(memoryStream));
 
-        await _minioClient.GetObjectAsync(getObjectArgs);
+        await _minioClient.GetObjectAsync(getObjectArgs).ConfigureAwait(false);
 
         memoryStream.Position = 0;
         return memoryStream;
@@ -33,6 +33,7 @@ public class MinioRepository(
 
     public async Task UploadAsync(Stream fileStream, string path, string bucket)
     {
+        ArgumentNullException.ThrowIfNull(fileStream);
         if (fileStream.Length == 0)
         {
             throw new ArgumentException("Поток не содержит данных");
@@ -45,13 +46,13 @@ public class MinioRepository(
 
         // Проверяем существование бакета
         bool bucketExists = await _minioClient.BucketExistsAsync(
-            new BucketExistsArgs().WithBucket(bucket));
+            new BucketExistsArgs().WithBucket(bucket)).ConfigureAwait(false);
 
         if (!bucketExists)
         {
             // Создаём бакет, если его нет
             await _minioClient.MakeBucketAsync(
-                new MakeBucketArgs().WithBucket(bucket));
+                new MakeBucketArgs().WithBucket(bucket)).ConfigureAwait(false);
         }
 
         if (fileStream.CanSeek)
@@ -65,6 +66,6 @@ public class MinioRepository(
             .WithStreamData(fileStream)
             .WithObjectSize(fileStream.Length);
 
-        await _minioClient.PutObjectAsync(putObjectArgs);
+        await _minioClient.PutObjectAsync(putObjectArgs).ConfigureAwait(false);
     }
 }

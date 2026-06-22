@@ -11,7 +11,8 @@ public sealed class ReadByIdSecretUseCase(
     private readonly ISecretRepository _secretRepository = secretRepository;
     public async Task<SecretDTOs.Response.Read> Ask(SecretDTOs.Inner.ReadById input)
     {
-        Secret secret = await input.GetSecret(_secretRepository);
+        ArgumentNullException.ThrowIfNull(input);
+        Secret secret = await input.GetSecret(_secretRepository).ConfigureAwait(false);
         return SecretDTOs.Response.Read.FromSecret(secret);
     }
 }

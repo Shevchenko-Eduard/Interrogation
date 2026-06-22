@@ -5,7 +5,7 @@ namespace Infrastructure;
 
 public class SecretManager : ISecretManager
 {
-    public string New(int numberOfBytes)
+    public string Create(int numberOfBytes)
     {
         byte[] key = new byte[numberOfBytes];
         RandomNumberGenerator.Fill(key);

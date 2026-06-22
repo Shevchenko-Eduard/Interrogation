@@ -9,7 +9,7 @@ public class ReadDocumentUseCase(IDocumentRepository documentRepository) : IQues
     private readonly IDocumentRepository _documentRepository = documentRepository;
     public async Task<IEnumerable<DocumentDTOs.Response.Read>> Ask(DocumentDTOs.Inner.Read input)
     {
-        var documents = await _documentRepository.GetAsync(expression: _ => true);
+        var documents = await _documentRepository.GetAsync(expression: _ => true).ConfigureAwait(false);
         return [.. documents.Select(DocumentDTOs.Response.Read.FromDocument)];
     }
 }

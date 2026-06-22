@@ -9,7 +9,8 @@ namespace API.WebApi;
 [ApiController]
 [Route("")]
 [Authorize]
-public class EncryptionTypeController(IEncryptionTypeRepository encryptionTypeRepository) : ControllerBase
+#pragma warning disable CA1812 // Избегайте внутренних классов, не имеющих экземпляры
+public sealed class EncryptionTypeController(IEncryptionTypeRepository encryptionTypeRepository) : ControllerBase
 {
     private readonly IEncryptionTypeRepository _encryptionTypeRepository = encryptionTypeRepository;
 
@@ -19,7 +20,7 @@ public class EncryptionTypeController(IEncryptionTypeRepository encryptionTypeRe
     {
         EncryptionTypeDTOs.Inner.ReadAll request = new();
         var useCase = new ReadEncryptionTypeUseCase(_encryptionTypeRepository);
-        List<EncryptionTypeDTOs.Response.Read> result = await useCase.Ask(request);
+        List<EncryptionTypeDTOs.Response.Read> result = await useCase.Ask(request).ConfigureAwait(false);
         return Ok(result);
     }
     [HttpGet("v1/documents/encryption/types/{id:int}", Name = "EncryptionTypeReadById")]
@@ -28,7 +29,7 @@ public class EncryptionTypeController(IEncryptionTypeRepository encryptionTypeRe
     {
         EncryptionTypeDTOs.Inner.ReadById request = new(id);
         var useCase = new ReadByIdEncryptionTypeUseCase(_encryptionTypeRepository);
-        EncryptionTypeDTOs.Response.Read result = await useCase.Ask(request);
+        EncryptionTypeDTOs.Response.Read result = await useCase.Ask(request).ConfigureAwait(false);
         return Ok(result);
     }
 }

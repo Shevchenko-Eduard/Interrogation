@@ -3,7 +3,7 @@ namespace Domain.Abstract;
 public abstract class StatusWithParentsObjectsAbstract<T> : StatusObjectAbstract<T> where T : StatusWithParentsObjectsAbstract<T>
 {
     #region Fields
-    public IEnumerable<T>? Parents { get; } = null;
+    public IEnumerable<T>? Parents { get; }
     #endregion
     #region Constructors
     protected StatusWithParentsObjectsAbstract(string name) : base(name) { }
@@ -20,13 +20,14 @@ public abstract class StatusWithParentsObjectsAbstract<T> : StatusObjectAbstract
         if (obj is StatusWithParentsObjectsAbstract<T> statusWithParents) { return Equals(statusWithParents: statusWithParents); }
         if (obj is StatusObjectAbstract<T> status) { return Equals(status: status); }
         if (obj is EnumObjectAbstract<T> enumObject) { return Equals(enumObject: enumObject); }
-        throw new Exception("Unsupported object type for comparison");
+        return false;
     }
     /// <summary>
     /// Текущий объект проверяют на соответствие входящему аргументу.
     /// </summary>
     public bool Equals(StatusWithParentsObjectsAbstract<T> statusWithParents)
     {
+        ArgumentNullException.ThrowIfNull(statusWithParents);
         bool result = GetHashCode() == statusWithParents.GetHashCode();
         if (result) { return result; }
         if (Parents?.Any() == true)
@@ -37,10 +38,12 @@ public abstract class StatusWithParentsObjectsAbstract<T> : StatusObjectAbstract
     }
     public static bool operator ==(StatusWithParentsObjectsAbstract<T> left, StatusWithParentsObjectsAbstract<T> right)
     {
+        ArgumentNullException.ThrowIfNull(left);
         return left.Equals(right);
     }
     public static bool operator !=(StatusWithParentsObjectsAbstract<T> left, StatusWithParentsObjectsAbstract<T> right)
     {
+        ArgumentNullException.ThrowIfNull(left);
         return !left.Equals(right);
     }
     public override int GetHashCode() => Id;

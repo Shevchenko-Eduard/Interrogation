@@ -6,7 +6,8 @@ namespace LibWeb;
 /// <summary>
 /// Предварительно надо добавить builder.Services.AddHttpContextAccessor();
 /// </summary>
-public class CurrentUserService(IHttpContextAccessor httpContextAccessor) : ICurrentUser
+#pragma warning disable CA1812 // Избегайте внутренних классов, не имеющих экземпляры
+internal sealed class CurrentUserService(IHttpContextAccessor httpContextAccessor) : ICurrentUser
 {
     private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
     private ClaimsPrincipal? User => _httpContextAccessor.HttpContext?.User;

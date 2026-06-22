@@ -10,7 +10,8 @@ public class ReadByIdEncryptionTypeUseCase(IEncryptionTypeRepository encryptionT
 
     public async Task<EncryptionTypeDTOs.Response.Read> Ask(EncryptionTypeDTOs.Inner.ReadById input)
     {
-        var encryptionType = await _encryptionTypeRepository.GetByIdAsync(input.Id)
+        ArgumentNullException.ThrowIfNull(input);
+        var encryptionType = await _encryptionTypeRepository.GetByIdAsync(input.Id).ConfigureAwait(false)
             ?? throw new Exception($"Типа шифрования с таким Id:{input.Id} не существует.");
         return EncryptionTypeDTOs.Response.Read.FromEncryptionType(encryptionType);
     }

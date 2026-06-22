@@ -5,7 +5,7 @@ using LibWeb;
 
 namespace API.DependencyInjection;
 
-public static partial class DependencyInjectionConfig
+internal static partial class DependencyInjectionConfig
 {
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {

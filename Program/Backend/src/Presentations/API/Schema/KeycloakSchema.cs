@@ -2,7 +2,7 @@ using System.Text.Json;
 
 namespace API.Schema;
 
-public class KeycloakSchema(IConfiguration configuration)
+internal sealed class KeycloakSchema(IConfiguration configuration)
 {
     private readonly IConfigurationSection _kcSettings = configuration.GetSection("Keycloak");
 
@@ -17,22 +17,22 @@ public class KeycloakSchema(IConfiguration configuration)
 
     public async Task<string> AuthorizationEndpoint()
     {
-        return (await OidcConfigurationAsync())["authorization_endpoint"].ToString()
+        return (await OidcConfigurationAsync().ConfigureAwait(false))["authorization_endpoint"].ToString()
             ?? throw new Exception("authorization_endpoint is missing in OIDC configuration");
     }
     public async Task<string> TokenEndpoint()
     {
-        return (await OidcConfigurationAsync())["token_endpoint"].ToString()
+        return (await OidcConfigurationAsync().ConfigureAwait(false))["token_endpoint"].ToString()
             ?? throw new Exception("token_endpoint is missing in OIDC configuration");
     }
 
     public async Task<string> IssuerEndpoint()
     {
-        return (await OidcConfigurationAsync())["issuer"].ToString()
+        return (await OidcConfigurationAsync().ConfigureAwait(false))["issuer"].ToString()
             ?? throw new Exception("issuer is missing in OIDC configuration");
     }
 
-    private Dictionary<string, object>? _oidcConfig = null;
+    private Dictionary<string, object>? _oidcConfig;
 
     public async Task<Dictionary<string, object>> OidcConfigurationAsync()
     {
@@ -41,7 +41,7 @@ public class KeycloakSchema(IConfiguration configuration)
             return _oidcConfig;
         }
 
-        HttpClientHandler handler = new()
+        using HttpClientHandler handler = new()
         {
             ServerCertificateCustomValidationCallback = (_, _, _, _) => true
         };
@@ -52,19 +52,22 @@ public class KeycloakSchema(IConfiguration configuration)
         {
             try
             {
-                using HttpResponseMessage response = await httpClient.GetAsync(MetadataAddress);
+                Uri uri = new(MetadataAddress, UriKind.Absolute);
+
+                using HttpResponseMessage response = await httpClient.GetAsync(uri).ConfigureAwait(false);
                 response.EnsureSuccessStatusCode();
 
-                string jsonString = await response.Content.ReadAsStringAsync();
+
+                string jsonString = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 var dict = JsonSerializer.Deserialize<Dictionary<string, object>>(jsonString)
                     ?? throw new Exception("Failed to deserialize OIDC configuration");
 
                 _oidcConfig = dict;
                 return dict;
             }
-            catch (HttpRequestException) when (attempt < 3)
+            catch (HttpRequestException) when (attempt < 5)
             {
-                await Task.Delay(1000 * attempt);
+                await Task.Delay(1000 * attempt).ConfigureAwait(false);
             }
         }
 

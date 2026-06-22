@@ -1,13 +1,12 @@
 namespace Application.Interfaces;
 
-public interface IAction{}
 
-public interface IAction<TInput> : IAction
+public interface IAction<TInput>
 {
     Task Execute(TInput input);
 }
 
-public interface IAction<TInput, TOutput> : IAction
+public interface IAction<TInput, TOutput>
 {
     Task<TOutput> Execute(TInput input);
 }

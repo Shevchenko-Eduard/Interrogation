@@ -12,7 +12,8 @@ public sealed class DeleteSecretUseCase(
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     public async Task Execute(SecretDTOs.Inner.Delete input)
     {
-        await _secretRepository.DeleteAsync(input.Id);
-        await _unitOfWork.SaveChangesAsync();
+        ArgumentNullException.ThrowIfNull(input);
+        await _secretRepository.DeleteAsync(input.Id).ConfigureAwait(false);
+        await _unitOfWork.SaveChangesAsync().ConfigureAwait(false);
     }
 }

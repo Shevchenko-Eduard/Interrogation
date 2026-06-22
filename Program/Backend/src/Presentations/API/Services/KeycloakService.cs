@@ -13,7 +13,7 @@ namespace LibWeb.Services;
 /// Keycloak__SslRequired(не обязательно),
 /// Keycloak__VerifyTokenAudience(не обязательно).
 /// </summary>
-public static class KeycloakService
+internal static class KeycloakService
 {
     public static IServiceCollection AddKeycloak(this IServiceCollection services, IConfiguration configuration)
     {

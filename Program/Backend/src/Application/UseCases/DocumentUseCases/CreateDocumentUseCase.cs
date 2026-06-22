@@ -21,19 +21,20 @@ public class CreateDocumentUseCase(
     private readonly IDocumentKeyManager _documentKeyManager = documentKeyManager;
     public async Task<DocumentDTOs.Response.Create> Execute(DocumentDTOs.Inner.Create input)
     {
+        ArgumentNullException.ThrowIfNull(input);
         try
         {
-            await _unitOfWork.BeginTransactionAsync();
+            await _unitOfWork.BeginTransactionAsync().ConfigureAwait(false);
             Document document = input.GetDocument(documentKeyGenerator: _documentKeyManager, clock: _clock);
-            await _documentRepository.AddAsync(document);
-            await _documentS3Repository.UploadAsync(input.Stream, document.DocumentKey);
-            await _unitOfWork.SaveChangesAsync();
-            await _unitOfWork.CommitTransactionAsync();
+            await _documentRepository.AddAsync(document).ConfigureAwait(false);
+            await _documentS3Repository.UploadAsync(input.Stream, document.DocumentKey).ConfigureAwait(false);
+            await _unitOfWork.SaveChangesAsync().ConfigureAwait(false);
+            await _unitOfWork.CommitTransactionAsync().ConfigureAwait(false);
             return DocumentDTOs.Response.Create.FromDocument(document);
         }
         catch
         {
-            await _unitOfWork.RollbackTransactionAsync();
+            await _unitOfWork.RollbackTransactionAsync().ConfigureAwait(false);
             throw;
         }
     }

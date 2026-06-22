@@ -14,7 +14,7 @@ namespace API.Services;
 /// DB__Username,
 /// DB__Password,
 /// </summary>
-public static class PostgresService
+internal static class PostgresService
 {
     public static IServiceCollection AddPostgres(this IServiceCollection services, IConfiguration configuration)
     {

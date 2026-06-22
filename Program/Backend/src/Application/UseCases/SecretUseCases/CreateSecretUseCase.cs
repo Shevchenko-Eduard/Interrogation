@@ -15,9 +15,10 @@ public sealed class CreateSecretUseCase(
     private readonly ISecretManager _secretGenerator = secretManager;
     public async Task<SecretDTOs.Response.Create> Execute(SecretDTOs.Inner.Create input)
     {
+        ArgumentNullException.ThrowIfNull(input);
         var secret = input.GetSecret(_secretGenerator);
-        await _secretRepository.AddAsync(secret);
-        await _unitOfWork.SaveChangesAsync();
+        await _secretRepository.AddAsync(secret).ConfigureAwait(false);
+        await _unitOfWork.SaveChangesAsync().ConfigureAwait(false);
         return SecretDTOs.Response.Create.FromSecret(secret);
     }
 }

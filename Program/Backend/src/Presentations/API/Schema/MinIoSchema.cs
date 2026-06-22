@@ -1,6 +1,6 @@
 namespace API.Schema;
 
-public class MinIoSchema(IConfiguration configuration)
+internal sealed class MinIoSchema(IConfiguration configuration)
 {
     private readonly IConfigurationSection minioSettings = configuration.GetSection("Minio");
 

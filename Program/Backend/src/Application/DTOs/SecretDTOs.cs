@@ -12,7 +12,7 @@ public static class SecretDTOs
             int NumberOfBytes
         )
         {
-            public Secret GetSecret(ISecretManager secretGenerator) => new(secretGenerator.New(NumberOfBytes));
+            public Secret GetSecret(ISecretManager secretGenerator) => new(secretGenerator.Create(NumberOfBytes));
         }
         public record Delete(
             int Id

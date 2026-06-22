@@ -10,7 +10,7 @@ public class ReadEncryptionTypeUseCase(IEncryptionTypeRepository encryptionTypeR
     private readonly IEncryptionTypeRepository _encryptionTypeRepository = encryptionTypeRepository;
     public async Task<List<EncryptionTypeDTOs.Response.Read>> Ask(EncryptionTypeDTOs.Inner.ReadAll input)
     {
-        List<EncryptionType> encryptionTypes = await _encryptionTypeRepository.GetAllAsync();
+        List<EncryptionType> encryptionTypes = await _encryptionTypeRepository.GetAllAsync().ConfigureAwait(false);
         return [.. encryptionTypes.Select(EncryptionTypeDTOs.Response.Read.FromEncryptionType)];
     }
 }

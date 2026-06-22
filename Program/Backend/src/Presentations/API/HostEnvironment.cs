@@ -1,6 +1,7 @@
 namespace LibWeb;
 
-public class HostEnvironment(IHostEnvironment hostEnvironment) : Infrastructure.Interfaces.IHostEnvironment
+#pragma warning disable CA1812 // Избегайте внутренних классов, не имеющих экземпляры
+internal sealed class HostEnvironment(IHostEnvironment hostEnvironment) : Infrastructure.Interfaces.IHostEnvironment
 {
     private readonly IHostEnvironment _hostEnvironment = hostEnvironment;
     public string CurrentEnvironment => _hostEnvironment.EnvironmentName;

@@ -4,6 +4,6 @@ namespace Infrastructure;
 
 public class DocumentKeyManager : IDocumentKeyManager
 {
-    public string New() => Guid.NewGuid().ToString();
+    public string Create() => Guid.NewGuid().ToString();
     
 }

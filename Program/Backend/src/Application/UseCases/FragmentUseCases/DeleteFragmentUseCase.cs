@@ -10,7 +10,8 @@ public class DeleteFragmentUseCase(IFragmentRepository fragmentRepository, IUnit
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     public async Task Execute(FragmentDTOs.Inner.Delete input)
     {
-        await _fragmentRepository.DeleteAsync(input.Id);
-        await _unitOfWork.SaveChangesAsync();
+        ArgumentNullException.ThrowIfNull(input);
+        await _fragmentRepository.DeleteAsync(input.Id).ConfigureAwait(false);
+        await _unitOfWork.SaveChangesAsync().ConfigureAwait(false);
     }
 }

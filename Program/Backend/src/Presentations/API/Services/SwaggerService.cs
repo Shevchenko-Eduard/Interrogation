@@ -3,14 +3,14 @@ using Microsoft.OpenApi;
 
 namespace API.Services;
 
-public static class SwaggerService
+internal static class SwaggerService
 {
     public static IServiceCollection AddSwagger(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddSwaggerGen(options =>
         {
             options.CustomSchemaIds(type =>
-                type.FullName?.Replace("+", ".") ?? type.Name);
+                type.FullName?.Replace("+", ".", StringComparison.OrdinalIgnoreCase) ?? type.Name);
 
             const string referenceId = "Keycloak";
 

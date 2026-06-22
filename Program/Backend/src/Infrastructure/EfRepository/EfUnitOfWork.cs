@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Infrastructure.EfRepository;
 
-public class EfUnitOfWork : IUnitOfWork
+public sealed class EfUnitOfWork : IUnitOfWork, IDisposable
 {
     private readonly ProgramContext _context;
     private IDbContextTransaction? _currentTransaction;
@@ -24,7 +24,7 @@ public class EfUnitOfWork : IUnitOfWork
             throw new InvalidOperationException("Транзакция уже была начата. Завершите или отмените текущую транзакцию перед началом новой.");
         }
 
-        _currentTransaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+        _currentTransaction = await _context.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
     }
 
     // Сохранение изменений
@@ -33,7 +33,7 @@ public class EfUnitOfWork : IUnitOfWork
         try
         {
             // Если транзакция активна, SaveChanges будет частью этой транзакции
-            return await _context.SaveChangesAsync(cancellationToken);
+            return await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
         catch (DbUpdateConcurrencyException ex)
         {
@@ -57,12 +57,12 @@ public class EfUnitOfWork : IUnitOfWork
 
         try
         {
-            await _currentTransaction.CommitAsync(cancellationToken);
+            await _currentTransaction.CommitAsync(cancellationToken).ConfigureAwait(false);
         }
         finally
         {
             // Освобождаем транзакцию независимо от результата
-            await _currentTransaction.DisposeAsync();
+            await _currentTransaction.DisposeAsync().ConfigureAwait(false);
             _currentTransaction = null;
         }
     }
@@ -77,12 +77,12 @@ public class EfUnitOfWork : IUnitOfWork
 
         try
         {
-            await _currentTransaction.RollbackAsync(cancellationToken);
+            await _currentTransaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
         }
         finally
         {
             // Освобождаем транзакцию независимо от результата
-            await _currentTransaction.DisposeAsync();
+            await _currentTransaction.DisposeAsync().ConfigureAwait(false);
             _currentTransaction = null;
         }
     }

@@ -6,7 +6,7 @@ using Infrastructure.Database;
 
 namespace Infrastructure.EfRepository;
 
-public class EfEncryptionTypeRepository(ProgramContext context) : IEncryptionTypeRepository
+public sealed class EfEncryptionTypeRepository(ProgramContext context) : IEncryptionTypeRepository
 {
     private readonly ProgramContext _context = context;
 

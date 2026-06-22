@@ -12,6 +12,8 @@ public partial class ProgramContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        ArgumentNullException.ThrowIfNull(modelBuilder);
+
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ProgramContext).Assembly);
 
         // Глобальный конвертер

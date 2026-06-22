@@ -7,9 +7,11 @@ public abstract class EnumObjectAbstract<T> where T : EnumObjectAbstract<T>
 {
     #region Fields
     public int Id { get; }
-    public static ReadOnlyCollection<T> All { get { return new(_all.Value.ToList()); } }
+#pragma warning disable CA1000 // Не объявляйте статические члены в универсальных типах
+    public static ReadOnlyCollection<T> All => new(_all.Value.ToList());
+#pragma warning restore CA1000 // Не объявляйте статические члены в универсальных типах
     private static Lazy<HashSet<T>> _all = UpdateAll();
-    private static int _nextId = 0;
+    private static int _nextId;
     #endregion
     #region Constructors
     protected EnumObjectAbstract()
@@ -37,18 +39,20 @@ public abstract class EnumObjectAbstract<T> where T : EnumObjectAbstract<T>
         return _all;
     }
     private static int GetNextId() => Interlocked.Increment(ref _nextId);
+#pragma warning disable CA1000 // Не объявляйте статические члены в универсальных типах
     public static EnumObjectAbstract<T> FromId(ushort id)
+#pragma warning restore CA1000 // Не объявляйте статические члены в универсальных типах
     {
         return All.FirstOrDefault(g => g.Id == id)
             ?? throw new Exception($"Invalid gender id: {id}");
     }
     public override bool Equals(object? obj)
     {
-        if (obj is EnumObjectAbstract<T> enumObject) { return Equals(enumObject: enumObject); }
-        throw new Exception("Unsupported object type for comparison");
+        return obj is EnumObjectAbstract<T> enumObject && Equals(enumObject: enumObject);
     }
     public bool Equals(EnumObjectAbstract<T> enumObject)
     {
+        ArgumentNullException.ThrowIfNull(enumObject);
         return enumObject.GetHashCode() == GetHashCode();
     }
     public override int GetHashCode() => Id;

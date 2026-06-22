@@ -5,13 +5,14 @@ using Domain.Interfaces.Repositories;
 namespace Application.UseCases.DocumentUseCases;
 
 public class ReadByIdDocumentUseCase(
-    IDocumentRepository documentRepository) : IQuestion<DocumentDTOs.Response.Read, DocumentDTOs.Inner.ReadById>
+    IDocumentRepository documentRepository) : IQuestion<DocumentDTOs.Response.ReadById, DocumentDTOs.Inner.ReadById>
 {
     private readonly IDocumentRepository _documentRepository = documentRepository;
-    public async Task<DocumentDTOs.Response.Read> Ask(DocumentDTOs.Inner.ReadById input)
+    public async Task<DocumentDTOs.Response.ReadById> Ask(DocumentDTOs.Inner.ReadById input)
     {
-        var document = await _documentRepository.GetByIdAsync(input.Id)
+        ArgumentNullException.ThrowIfNull(input);
+        var document = await _documentRepository.GetByIdAsync(input.Id).ConfigureAwait(false)
             ?? throw new Exception($"Документа с Id:{input.Id} не существует.");
-        return DocumentDTOs.Response.Read.FromDocument(document);
+        return DocumentDTOs.Response.ReadById.FromDocument(document);
     }
 }

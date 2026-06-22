@@ -4,6 +4,8 @@ public static class FactoryConverter
 {
     public static void UseConverter(IEnumerable<Microsoft.EntityFrameworkCore.Metadata.IMutableEntityType> mutableEntityTypes)
     {
+        ArgumentNullException.ThrowIfNull(mutableEntityTypes);
+
         foreach (var entityType in mutableEntityTypes)
         {
             foreach (var property in entityType.GetProperties())

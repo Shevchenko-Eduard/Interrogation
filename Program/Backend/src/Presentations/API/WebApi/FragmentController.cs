@@ -10,7 +10,8 @@ namespace API.WebApi;
 [ApiController]
 [Route("")]
 [Authorize]
-public class FragmentController(IUnitOfWork unitOfWork, IFragmentRepository fragmentRepository) : ControllerBase
+#pragma warning disable CA1812 // Избегайте внутренних классов, не имеющих экземпляры
+public sealed class FragmentController(IUnitOfWork unitOfWork, IFragmentRepository fragmentRepository) : ControllerBase
 {
     private readonly IFragmentRepository _fragmentRepository = fragmentRepository;
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
@@ -20,7 +21,7 @@ public class FragmentController(IUnitOfWork unitOfWork, IFragmentRepository frag
     public async Task<IActionResult> Create([FromBody] FragmentDTOs.Inner.Create create)
     {
         CreateFragmentUseCase useCase = new(fragmentRepository: _fragmentRepository, unitOfWork: _unitOfWork);
-        var result = await useCase.Execute(create);
+        var result = await useCase.Execute(create).ConfigureAwait(false);
         return Ok(result);
     }
 
@@ -30,7 +31,7 @@ public class FragmentController(IUnitOfWork unitOfWork, IFragmentRepository frag
     {
         DeleteFragmentUseCase useCase = new(fragmentRepository: _fragmentRepository, unitOfWork: _unitOfWork);
         FragmentDTOs.Inner.Delete delete = new(Id: id);
-        await useCase.Execute(delete);
+        await useCase.Execute(delete).ConfigureAwait(false);
         return Ok($"Фрагмент {id} документа удален.");
     }
     [HttpGet("v1/documents/fragment/{id:int}", Name = "FragmentReadById")]
@@ -39,7 +40,7 @@ public class FragmentController(IUnitOfWork unitOfWork, IFragmentRepository frag
     {
         ReadByIdFragmentUseCase useCase = new(fragmentRepository: _fragmentRepository);
         FragmentDTOs.Inner.ReadById readById = new(Id: id);
-        FragmentDTOs.Response.Read read = await useCase.Ask(readById);
+        FragmentDTOs.Response.Read read = await useCase.Ask(readById).ConfigureAwait(false);
         return Ok(read);
     }
     [HttpGet("v1/documents/{id:int}/fragment", Name = "FragmentReadByDocumentId")]
@@ -48,7 +49,7 @@ public class FragmentController(IUnitOfWork unitOfWork, IFragmentRepository frag
     {
         ReadByDocumentIdFragmentUseCase useCase = new(fragmentRepository: _fragmentRepository);
         FragmentDTOs.Inner.ReadByDocumentId readById = new(DocumentId: id);
-        List<FragmentDTOs.Response.Read> read = await useCase.Ask(readById);
+        List<FragmentDTOs.Response.Read> read = await useCase.Ask(readById).ConfigureAwait(false);
         return Ok(read);
     }
 }

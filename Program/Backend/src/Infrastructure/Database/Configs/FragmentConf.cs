@@ -8,6 +8,8 @@ public class FragmentConf : IEntityTypeConfiguration<Fragment>
 {
     public void Configure(EntityTypeBuilder<Fragment> builder)
     {
+        ArgumentNullException.ThrowIfNull(builder);
+
         #region table
         builder.ToTable("fragments");
         #endregion

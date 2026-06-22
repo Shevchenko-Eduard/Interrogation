@@ -3,7 +3,7 @@ using LibWeb.Services;
 
 namespace API.Services;
 
-public static class AppInitService
+internal static class AppInitService
 {
     public static WebApplicationBuilder AddAppInit(this WebApplicationBuilder builder)
     {

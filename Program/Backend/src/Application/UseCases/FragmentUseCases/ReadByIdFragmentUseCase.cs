@@ -9,7 +9,8 @@ public class ReadByIdFragmentUseCase(IFragmentRepository fragmentRepository) : I
     private readonly IFragmentRepository _fragmentRepository = fragmentRepository;
     public async Task<FragmentDTOs.Response.Read> Ask(FragmentDTOs.Inner.ReadById input)
     {
-        var fragment = await _fragmentRepository.GetByIdAsync(input.Id)
+        ArgumentNullException.ThrowIfNull(input);
+        var fragment = await _fragmentRepository.GetByIdAsync(input.Id).ConfigureAwait(false)
             ?? throw new Exception($"Фрагмента с таким Id:{input.Id} не существует.");
         return FragmentDTOs.Response.Read.FromFragment(fragment);
     }

@@ -2,7 +2,7 @@ using Domain.Interfaces.Repositories.BaseRepository;
 
 namespace Infrastructure.MinioRepository;
 
-public class MinioDocumentRepository(
+public sealed class MinioDocumentRepository(
     IS3Repository minioRepository) : IS3DocumentRepository
 {
     private readonly IS3Repository _minioRepository = minioRepository;

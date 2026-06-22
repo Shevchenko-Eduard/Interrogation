@@ -1,3 +1,4 @@
+using System.Data;
 using Domain.Entity;
 using Domain.Interfaces;
 
@@ -120,6 +121,32 @@ public static class DocumentDTOs
             public static Read FromDocument(Document document) => new(
                     Id: document.Id,
                     EncryptionTypeId: document.EncryptionTypeId,
+                    CreatorId: document.CreatorId,
+                    Name: document.Name,
+                    Description: document.Description,
+                    ContentType: document.ContentType,
+                    Extension: document.Extension,
+                    EncryptionAlgorithm: document.EncryptionAlgorithm,
+                    DateOfCreate: document.DateOfCreate
+                );
+        }
+        public record ReadById(
+            int Id,
+            int EncryptionTypeId,
+            int SecretId,
+            string CreatorId,
+            string Name,
+            string? Description,
+            string ContentType,
+            string Extension,
+            string? EncryptionAlgorithm,
+            DateTimeOffset DateOfCreate
+        )
+        {
+            public static ReadById FromDocument(Document document) => new(
+                    Id: document.Id,
+                    EncryptionTypeId: document.EncryptionTypeId,
+                    SecretId: document.SecretId,
                     CreatorId: document.CreatorId,
                     Name: document.Name,
                     Description: document.Description,

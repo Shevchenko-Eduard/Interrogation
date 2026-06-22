@@ -12,7 +12,8 @@ namespace API.WebApi;
 [ApiController]
 [Route("")]
 [Authorize]
-public class DocumentController(
+#pragma warning disable CA1812 // Избегайте внутренних классов, не имеющих экземпляры
+public sealed class DocumentController(
     IDocumentRepository documentRepository,
     IClock clock,
     IDocumentKeyManager documentKeyManager,
@@ -55,7 +56,7 @@ public class DocumentController(
             EncryptionAlgorithm: request.EncryptionAlgorithm,
             Stream: file.OpenReadStream());
 
-        var result = await useCase.Execute(innerRequest);
+        var result = await useCase.Execute(innerRequest).ConfigureAwait(false);
         return Ok(result);
     }
 
@@ -73,7 +74,7 @@ public class DocumentController(
             Description: request.Description
         );
 
-        await useCase.Execute(innerRequest);
+        await useCase.Execute(innerRequest).ConfigureAwait(false);
         return NoContent();
     }
 
@@ -86,7 +87,7 @@ public class DocumentController(
             documentS3Repository: _s3DocumentRepository,
             unitOfWork: _unitOfWork);
         DocumentDTOs.Inner.Delete delete = new(Id: id);
-        await useCase.Execute(delete);
+        await useCase.Execute(delete).ConfigureAwait(false);
         return NoContent();
     }
 
@@ -96,7 +97,7 @@ public class DocumentController(
     {
         DocumentDTOs.Inner.Read request = new();
         var useCase = new ReadDocumentUseCase(documentRepository: _documentRepository);
-        IEnumerable<DocumentDTOs.Response.Read> result = await useCase.Ask(request);
+        var result = await useCase.Ask(request).ConfigureAwait(false);
         return Ok(result);
     }
 
@@ -108,7 +109,7 @@ public class DocumentController(
         var useCase = new ReadByIdDocumentUseCase(
             documentRepository: _documentRepository
         );
-        DocumentDTOs.Response.Read result = await useCase.Ask(request);
+        var result = await useCase.Ask(request).ConfigureAwait(false);
         return Ok(result);
     }
     
@@ -121,7 +122,7 @@ public class DocumentController(
             documentRepository: _documentRepository,
             s3DocumentRepository: _s3DocumentRepository
         );
-        DocumentDTOs.Response.DownloadById result = await useCase.Ask(request);
+        var result = await useCase.Ask(request).ConfigureAwait(false);
         return File(result.Stream, result.ContentType, result.Name);
     }
 }

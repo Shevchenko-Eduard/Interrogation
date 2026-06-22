@@ -10,7 +10,7 @@ namespace API.Services;
 /// Minio__Password, 
 /// Minio__HTTPS(не обязательно) использовать ли https, по умолчанию false.
 /// </summary>
-public static class MinioService
+internal static class MinioService
 {
     public static IServiceCollection AddMinioClient(this IServiceCollection services, IConfiguration configuration)
     {

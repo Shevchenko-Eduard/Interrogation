@@ -2,4 +2,3 @@ include:
   - ./Backend/docker-compose.yml
   - ./Nginx/docker-compose.yml
   - ./Keycloak/docker-compose.yml
-  - ./Frontend/docker-compose.yml

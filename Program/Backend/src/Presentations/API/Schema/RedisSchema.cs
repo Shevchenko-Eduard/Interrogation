@@ -1,6 +1,6 @@
 namespace API.Schema;
 
-public class RedisSchema(IConfiguration configuration)
+internal sealed class RedisSchema(IConfiguration configuration)
 {
     private readonly IConfigurationSection redisSettings = configuration.GetSection("Redis");
 

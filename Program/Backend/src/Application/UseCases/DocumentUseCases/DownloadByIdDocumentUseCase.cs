@@ -13,9 +13,10 @@ public class DownloadByIdDocumentUseCase(
     private readonly IS3DocumentRepository _s3DocumentRepository = s3DocumentRepository;
     public async Task<DocumentDTOs.Response.DownloadById> Ask(DocumentDTOs.Inner.DownloadById input)
     {
-        var document = await _documentRepository.GetByIdAsync(input.Id)
+        ArgumentNullException.ThrowIfNull(input);
+        var document = await _documentRepository.GetByIdAsync(input.Id).ConfigureAwait(false)
             ?? throw new Exception($"Документа с Id:{input.Id} не существует.");
-        Stream stream = await _s3DocumentRepository.DownloadAsync(document.DocumentKey);
+        Stream stream = await _s3DocumentRepository.DownloadAsync(document.DocumentKey).ConfigureAwait(false);
         return DocumentDTOs.Response.DownloadById.FromDocument(document, stream);
     }
 }
