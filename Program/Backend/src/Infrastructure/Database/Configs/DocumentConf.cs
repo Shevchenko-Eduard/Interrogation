@@ -34,8 +34,7 @@ public class DocumentConf : IEntityTypeConfiguration<Document>
             .IsRequired();
 
         builder.Property(_ => _.SecretId)
-            .HasColumnName("secret_id")
-            .IsRequired();
+            .HasColumnName("secret_id");
 
         builder.Property(_ => _.DocumentKey)
             .HasColumnName("document_key")
@@ -74,7 +73,7 @@ public class DocumentConf : IEntityTypeConfiguration<Document>
 
         #region index
         builder.HasIndex(_ => _.Name)
-            .HasDatabaseName("idx__documents__name");
+            .HasDatabaseName("idx_documents_name");
         #endregion
     }
 }
