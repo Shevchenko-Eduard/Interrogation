@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Interrogation.Client.SmokeTests/Interrogation.Client.SmokeTests.csproj" />
+  <Project Path="Interrogation.Client/Interrogation.Client.csproj" />
+</Solution>

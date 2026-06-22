@@ -1,0 +1,35 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Interrogation.Client.Views.LoginWindow"
+        x:CompileBindings="False"
+        Width="460" Height="460" CanResize="False"
+        WindowStartupLocation="CenterScreen" Title="Вход в систему">
+  <Window.Styles>
+    <Style Selector="Button.primary">
+      <Setter Property="MinHeight" Value="46" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Background" Value="#244C73" />
+      <Setter Property="Foreground" Value="#FFFFFF" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+  </Window.Styles>
+  <Grid RowDefinitions="150,*" Background="#EFF3F7">
+    <Border Background="#1F2933">
+      <StackPanel Margin="36,30" VerticalAlignment="Center" Spacing="7">
+        <TextBlock Text="Защита протоколов" Foreground="#FFFFFF" FontSize="25" FontWeight="SemiBold" />
+        <TextBlock Text="Авторизация через Keycloak" Foreground="#C9D4E2" FontSize="13" />
+      </StackPanel>
+    </Border>
+    <Border Grid.Row="1" Margin="32" Padding="28" Background="#FFFFFF" BorderBrush="#D8DEE8" BorderThickness="1" CornerRadius="8">
+      <StackPanel Spacing="15" VerticalAlignment="Center">
+        <TextBlock Text="Вход" FontSize="20" FontWeight="SemiBold" />
+        <TextBlock Text="Авторизация откроется в системном браузере" Foreground="#667085" TextWrapping="Wrap" />
+        <Border IsVisible="{Binding HasError}" Background="#FFF1F0" BorderBrush="#E7B3AE" BorderThickness="1" CornerRadius="6" Padding="10">
+          <TextBlock Text="{Binding ErrorMessage}" Foreground="#9E2A2B" TextWrapping="Wrap" FontSize="13" />
+        </Border>
+        <Button Content="{Binding SignInButtonText}" Click="SignInButton_OnClick" Classes="primary"
+                IsEnabled="{Binding CanSignIn}" HorizontalAlignment="Stretch" />
+      </StackPanel>
+    </Border>
+  </Grid>
+</Window>

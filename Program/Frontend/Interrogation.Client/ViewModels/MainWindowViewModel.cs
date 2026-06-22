@@ -1,0 +1,698 @@
+using System.Collections.ObjectModel;
+using System.Text.Json;
+using Interrogation.Client.Models;
+using Interrogation.Client.Services;
+
+namespace Interrogation.Client.ViewModels;
+
+public sealed class MainWindowViewModel : ViewModelBase
+{
+    private readonly IInterrogationApiClient _apiClient;
+    private readonly DocumentContentReader _documentContentReader = new();
+    private readonly ICryptographyService _cryptographyService;
+    private readonly IAuditLogService _auditLogService;
+    private readonly IContainerIntegrityService _integrityService;
+    private DocumentItem? _selectedDocument;
+    private string _documentText = string.Empty;
+    private string _selectedFragmentText = string.Empty;
+    private int _selectedFragmentStart = -1;
+    private int _selectedFragmentLength;
+    private string _statusMessage = "Готово к работе";
+    private UserRole _currentRole = UserRole.Employee;
+    private int _nextDocumentId = 100;
+    private bool _isBusy;
+    private readonly List<AuditRecord> _auditHistory;
+    private string _auditSearchText = string.Empty;
+    private string _auditResultFilter = "Все";
+
+    public MainWindowViewModel(
+        IInterrogationApiClient apiClient,
+        ICryptographyService cryptographyService,
+        IAuditLogService auditLogService,
+        IContainerIntegrityService integrityService,
+        UserSession session)
+    {
+        _apiClient = apiClient;
+        _cryptographyService = cryptographyService;
+        _auditLogService = auditLogService;
+        _integrityService = integrityService;
+        CurrentRole = session.Role;
+        CurrentUserName = session.DisplayName;
+        Documents = new ObservableCollection<DocumentItem>();
+        Fragments = new ObservableCollection<FragmentRecord>();
+        _auditHistory = new List<AuditRecord>(_auditLogService.LoadRecent(300));
+        AuditLog = new ObservableCollection<AuditRecord>(_auditHistory);
+        RecordAudit("Вход в систему", "Успешно", "Система");
+    }
+
+    public async Task InitializeAsync()
+    {
+        IsBusy = true;
+        StatusMessage = "Загрузка документов с сервера...";
+        try
+        {
+            var documents = await _apiClient.GetDocumentsAsync();
+            Documents.Clear();
+            foreach (var document in documents)
+            {
+                Documents.Add(new DocumentItem
+                {
+                    Id = document.Id,
+                    Name = document.Name,
+                    CaseNumber = document.Description ?? $"Документ API #{document.Id}",
+                    Owner = document.CreatorId,
+                    Status = document.EncryptionAlgorithm ?? "Без шифрования",
+                    UpdatedAt = document.DateOfCreate,
+                    Content = "Документ хранится на сервере. Выберите его для загрузки содержимого.",
+                    IsRemote = true,
+                    RemoteExtension = document.Extension
+                });
+            }
+            SelectedDocument = Documents.FirstOrDefault();
+            StatusMessage = $"Загружено документов: {Documents.Count}";
+            RecordAudit("Синхронизация с API", "Успешно", "Система");
+        }
+        catch (HttpRequestException exception)
+        {
+            StatusMessage = $"API недоступен: {exception.Message}";
+            RecordAudit("Синхронизация с API", $"Ошибка: {exception.Message}", "Система");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    public async Task LoadSelectedDocumentAsync()
+    {
+        var document = SelectedDocument;
+        if (document is null || !document.IsRemote)
+        {
+            return;
+        }
+        IsBusy = true;
+        StatusMessage = $"Скачивание документа: {document.Name}";
+        try
+        {
+            var downloaded = await _apiClient.DownloadDocumentAsync(
+                document.Id,
+                document.Name,
+                document.RemoteExtension ?? string.Empty);
+            using var stream = new MemoryStream(downloaded.Content);
+            DocumentText = await _documentContentReader.ReadAsync(downloaded.FileName, stream);
+            document.Content = DocumentText;
+            var sourceFormat = Path.GetExtension(downloaded.FileName).TrimStart('.').ToLowerInvariant();
+            if (sourceFormat is "docx" or "odt")
+            {
+                document.OriginalFileBytes = downloaded.Content;
+                document.OriginalText = DocumentText;
+                document.SourceFormat = sourceFormat;
+            }
+            StatusMessage = $"Документ загружен: {downloaded.FileName}";
+            RecordAudit("Скачивание документа", "Успешно", document.Name);
+        }
+        catch (Exception exception) when (exception is HttpRequestException or IOException or InvalidDataException)
+        {
+            StatusMessage = $"Не удалось скачать документ: {exception.Message}";
+            RecordAudit("Скачивание документа", $"Ошибка: {exception.Message}", document.Name);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    public ObservableCollection<DocumentItem> Documents { get; }
+
+    public ObservableCollection<FragmentRecord> Fragments { get; }
+
+    public ObservableCollection<AuditRecord> AuditLog { get; }
+
+    public IReadOnlyList<string> AuditResultFilters { get; } = ["Все", "Успешно", "Ошибки"];
+
+    public string AuditSearchText
+    {
+        get => _auditSearchText;
+        set
+        {
+            if (SetProperty(ref _auditSearchText, value)) ApplyAuditFilter();
+        }
+    }
+
+    public string AuditResultFilter
+    {
+        get => _auditResultFilter;
+        set
+        {
+            if (SetProperty(ref _auditResultFilter, value)) ApplyAuditFilter();
+        }
+    }
+
+    public string CurrentUserName { get; }
+
+    public bool IsAdmin => CurrentRole == UserRole.Admin;
+
+    public string CryptoEngineText => _cryptographyService.EngineDescription;
+
+    public bool IsBusy
+    {
+        get => _isBusy;
+        private set
+        {
+            if (SetProperty(ref _isBusy, value))
+            {
+                OnPropertyChanged(nameof(CanEncrypt));
+                OnPropertyChanged(nameof(CanDecrypt));
+            }
+        }
+    }
+
+    public DocumentItem? SelectedDocument
+    {
+        get => _selectedDocument;
+        set
+        {
+            if (SetProperty(ref _selectedDocument, value))
+            {
+                DocumentText = value?.Content ?? string.Empty;
+                ClearSelectedFragment();
+                StatusMessage = value is null
+                    ? "Документ не выбран"
+                    : $"Открыт документ: {value.Name}";
+                OnPropertyChanged(nameof(DocumentInfo));
+                OnPropertyChanged(nameof(HasSelectedDocument));
+                OnPropertyChanged(nameof(CanDecrypt));
+            }
+        }
+    }
+
+    public string DocumentText
+    {
+        get => _documentText;
+        set => SetProperty(ref _documentText, value);
+    }
+
+    public string SelectedFragmentText
+    {
+        get => _selectedFragmentText;
+        set => SetProperty(ref _selectedFragmentText, value);
+    }
+
+    public void SetSelectedFragment(string text, int start, int length)
+    {
+        SelectedFragmentText = text;
+        _selectedFragmentStart = start;
+        _selectedFragmentLength = length;
+    }
+
+    public void ClearSelectedFragment()
+    {
+        SelectedFragmentText = string.Empty;
+        _selectedFragmentStart = -1;
+        _selectedFragmentLength = 0;
+    }
+
+    public string StatusMessage
+    {
+        get => _statusMessage;
+        set => SetProperty(ref _statusMessage, value);
+    }
+
+    public UserRole CurrentRole
+    {
+        get => _currentRole;
+        set
+        {
+            if (SetProperty(ref _currentRole, value))
+            {
+                OnPropertyChanged(nameof(CurrentRoleText));
+                OnPropertyChanged(nameof(CanDecrypt));
+            }
+        }
+    }
+
+    public string CurrentRoleText => CurrentRole == UserRole.Admin ? "Администратор" : "Сотрудник";
+
+    public bool HasSelectedDocument => SelectedDocument is not null;
+
+    public bool CanEncrypt => HasSelectedDocument && _cryptographyService.IsAvailable && !IsBusy;
+
+    public bool CanDecrypt => CurrentRole == UserRole.Admin && HasSelectedDocument && _cryptographyService.IsAvailable && !IsBusy;
+
+    public string DocumentInfo
+    {
+        get
+        {
+            if (SelectedDocument is null)
+            {
+                return "Нет выбранного документа";
+            }
+
+            return $"{SelectedDocument.CaseNumber}\nВладелец: {SelectedDocument.Owner}\nСтатус: {SelectedDocument.Status}\nОбновлен: {SelectedDocument.UpdatedAt:dd.MM.yyyy HH:mm}";
+        }
+    }
+
+    public void ImportDocument(string fileName, string content, byte[]? originalBytes = null, string? sourceFormat = null)
+    {
+        var document = new DocumentItem
+        {
+            Id = _nextDocumentId++,
+            Name = fileName,
+            CaseNumber = $"Локальный файл {DateTimeOffset.Now:ddMMyy-HHmm}",
+            Owner = CurrentRoleText,
+            Status = "Без шифрования",
+            UpdatedAt = DateTimeOffset.Now,
+            Content = content,
+            OriginalFileBytes = originalBytes,
+            OriginalText = originalBytes is null ? null : content,
+            SourceFormat = sourceFormat
+        };
+
+        Documents.Insert(0, document);
+        SelectedDocument = document;
+        StatusMessage = $"Файл загружен: {fileName}";
+        RecordAudit("Открытие документа", "Успешно", fileName);
+    }
+
+    public void ImportEncryptedContainer(string fileName, string json)
+    {
+        try
+        {
+            using var container = JsonDocument.Parse(json);
+            var root = container.RootElement;
+            var format = root.GetProperty("format").GetString();
+            if (format is not ("interrogation.enc.v2" or "interrogation.enc.v3"))
+            {
+                StatusMessage = "Формат контейнера не поддерживается";
+                return;
+            }
+
+            var metadata = root.GetProperty("document");
+            var payload = root.GetProperty("encryptedPayload").GetString();
+            if (string.IsNullOrWhiteSpace(payload))
+            {
+                StatusMessage = "В контейнере отсутствуют зашифрованные данные";
+                return;
+            }
+
+            var documentName = metadata.TryGetProperty("Name", out var name)
+                ? name.GetString() ?? fileName
+                : fileName;
+            var document = new DocumentItem
+            {
+                Id = _nextDocumentId++,
+                Name = documentName,
+                CaseNumber = GetString(metadata, "CaseNumber", "Импортированный контейнер"),
+                Owner = GetString(metadata, "Owner", "Не указан"),
+                Status = "Зашифрованный контейнер",
+                UpdatedAt = DateTimeOffset.Now,
+                Content = "[ДОКУМЕНТ ЗАШИФРОВАН]\n\nДля просмотра содержимого выберите роль администратора и выполните расшифровку.",
+                EncryptedPayload = payload
+            };
+
+            if (format == "interrogation.enc.v3")
+            {
+                if (!root.TryGetProperty("integrity", out var integrity))
+                {
+                    StatusMessage = "Контейнер v3 повреждён: отсутствует контроль целостности";
+                    RecordAudit("Открытие контейнера", "Ошибка: отсутствует контроль целостности", fileName);
+                    return;
+                }
+
+                document.IntegritySalt = GetString(integrity, "salt", string.Empty);
+                document.IntegrityTag = GetString(integrity, "tag", string.Empty);
+                if (string.IsNullOrWhiteSpace(document.IntegritySalt) || string.IsNullOrWhiteSpace(document.IntegrityTag))
+                {
+                    StatusMessage = "Контейнер v3 повреждён: неверные параметры целостности";
+                    RecordAudit("Открытие контейнера", "Ошибка: неверные параметры целостности", fileName);
+                    return;
+                }
+            }
+
+            if (root.TryGetProperty("fragments", out var fragments))
+            {
+                foreach (var fragment in fragments.EnumerateArray())
+                {
+                    var fragmentPayload = GetString(fragment, "encryptedPayload", string.Empty);
+                    if (string.IsNullOrWhiteSpace(fragmentPayload))
+                    {
+                        continue;
+                    }
+
+                    Fragments.Add(new FragmentRecord
+                    {
+                        Marker = GetString(fragment, "Marker", "[ENC-FRAGMENT]"),
+                        DocumentName = documentName,
+                        Preview = "Зашифрованный фрагмент",
+                        EncryptedPayload = fragmentPayload,
+                        Length = fragment.TryGetProperty("Length", out var length) ? length.GetInt32() : 0,
+                        CreatedAt = fragment.TryGetProperty("CreatedAt", out var createdAt) && createdAt.TryGetDateTimeOffset(out var timestamp)
+                            ? timestamp
+                            : DateTimeOffset.Now
+                    });
+                }
+            }
+
+            Documents.Insert(0, document);
+            SelectedDocument = document;
+            StatusMessage = $"Контейнер загружен: {fileName}";
+            RecordAudit("Открытие контейнера", "Успешно", fileName);
+        }
+        catch (JsonException)
+        {
+            StatusMessage = "Не удалось прочитать контейнер: поврежденный JSON";
+            RecordAudit("Открытие контейнера", "Ошибка: повреждённый JSON", fileName);
+        }
+        catch (InvalidOperationException)
+        {
+            StatusMessage = "Не удалось прочитать контейнер: неверная структура";
+        }
+        catch (KeyNotFoundException)
+        {
+            StatusMessage = "Не удалось прочитать контейнер: отсутствуют обязательные поля";
+        }
+        catch (FormatException)
+        {
+            StatusMessage = "Не удалось прочитать контейнер: неверный формат данных";
+        }
+    }
+
+    public async Task EncryptFullDocumentAsync(string password)
+    {
+        if (SelectedDocument is null)
+        {
+            StatusMessage = "Сначала выберите документ";
+            return;
+        }
+
+        IsBusy = true;
+        StatusMessage = "OpenSSL шифрует документ...";
+        try
+        {
+            await ValidateFragmentPasswordsAsync(SelectedDocument.Name, password);
+            SelectedDocument.EncryptedPayload = await _cryptographyService.EncryptAsync(DocumentText, password);
+            SelectedDocument.Content = "[ДОКУМЕНТ ЗАШИФРОВАН]\n\nСодержимое скрыто. Для просмотра требуется роль администратора и пароль.";
+            SelectedDocument.Status = "Полностью зашифрован";
+            SelectedDocument.UpdatedAt = DateTimeOffset.Now;
+            DocumentText = SelectedDocument.Content;
+            OnPropertyChanged(nameof(DocumentInfo));
+            StatusMessage = "Документ зашифрован с помощью OpenSSL";
+            RecordAudit("Шифрование документа", "Успешно");
+        }
+        catch (InvalidOperationException exception)
+        {
+            StatusMessage = exception.Message;
+            RecordAudit("Шифрование документа", $"Ошибка: {exception.Message}");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    public async Task EncryptSelectedFragmentAsync(string password)
+    {
+        if (SelectedDocument is null)
+        {
+            StatusMessage = "Сначала выберите документ";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(SelectedFragmentText))
+        {
+            StatusMessage = "Выделите фрагмент текста";
+            return;
+        }
+
+        if (_selectedFragmentStart < 0 ||
+            _selectedFragmentLength <= 0 ||
+            _selectedFragmentStart + _selectedFragmentLength > DocumentText.Length ||
+            !DocumentText.AsSpan(_selectedFragmentStart, _selectedFragmentLength)
+                .SequenceEqual(SelectedFragmentText.AsSpan()))
+        {
+            ClearSelectedFragment();
+            StatusMessage = "Текст изменился после выделения. Выберите фрагмент повторно";
+            return;
+        }
+
+        IsBusy = true;
+        StatusMessage = "OpenSSL шифрует выбранный фрагмент...";
+        try
+        {
+            await ValidateFragmentPasswordsAsync(SelectedDocument.Name, password);
+            var marker = $"[ENC-FRAGMENT-{DateTimeOffset.Now:HHmmssfff}]";
+        var preview = SelectedFragmentText.Length > 80
+            ? SelectedFragmentText[..80] + "..."
+            : SelectedFragmentText;
+
+        DocumentText = DocumentText[.._selectedFragmentStart]
+            + marker
+            + DocumentText[(_selectedFragmentStart + _selectedFragmentLength)..];
+        SelectedDocument.Content = DocumentText;
+        SelectedDocument.Status = "Частично зашифрован";
+        SelectedDocument.UpdatedAt = DateTimeOffset.Now;
+
+        Fragments.Insert(0, new FragmentRecord
+        {
+            Marker = marker,
+            DocumentName = SelectedDocument.Name,
+            Preview = preview.ReplaceLineEndings(" "),
+            EncryptedPayload = await _cryptographyService.EncryptAsync(SelectedFragmentText, password),
+            Length = SelectedFragmentText.Length,
+            CreatedAt = DateTimeOffset.Now
+        });
+
+        SelectedFragmentText = marker;
+        _selectedFragmentStart = -1;
+        _selectedFragmentLength = 0;
+        OnPropertyChanged(nameof(DocumentInfo));
+            StatusMessage = "Фрагмент зашифрован с помощью OpenSSL";
+            RecordAudit("Шифрование фрагмента", "Успешно");
+        }
+        catch (InvalidOperationException exception)
+        {
+            StatusMessage = exception.Message;
+            RecordAudit("Шифрование фрагмента", $"Ошибка: {exception.Message}");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    public async Task DecryptDocumentAsync(string password)
+    {
+        if (!CanDecrypt)
+        {
+            StatusMessage = "Расшифрование доступно только администратору";
+            return;
+        }
+
+        if (SelectedDocument is null)
+        {
+            StatusMessage = "Сначала выберите документ";
+            return;
+        }
+
+        IsBusy = true;
+        StatusMessage = "OpenSSL расшифровывает документ...";
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(SelectedDocument.IntegritySalt) &&
+                !string.IsNullOrWhiteSpace(SelectedDocument.IntegrityTag))
+            {
+                var integrity = new IntegrityInfo(SelectedDocument.IntegritySalt, SelectedDocument.IntegrityTag);
+                if (!_integrityService.Verify(GetProtectedValues(SelectedDocument.EncryptedPayload), password, integrity))
+                {
+                    throw new InvalidOperationException("Контейнер изменён, повреждён или указан неверный пароль");
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(SelectedDocument.EncryptedPayload))
+            {
+                DocumentText = await _cryptographyService.DecryptAsync(SelectedDocument.EncryptedPayload, password);
+            }
+            else
+            {
+                DocumentText = SelectedDocument.Content;
+            }
+
+            foreach (var fragment in Fragments.Where(item => item.DocumentName == SelectedDocument.Name))
+            {
+                var plainText = await _cryptographyService.DecryptAsync(fragment.EncryptedPayload, password);
+                DocumentText = DocumentText.Replace(fragment.Marker, plainText, StringComparison.Ordinal);
+            }
+
+            SelectedDocument.Content = DocumentText;
+            SelectedDocument.EncryptedPayload = null;
+            SelectedDocument.IntegritySalt = null;
+            SelectedDocument.IntegrityTag = null;
+            SelectedDocument.Status = "Расшифрован";
+            SelectedDocument.UpdatedAt = DateTimeOffset.Now;
+            OnPropertyChanged(nameof(DocumentInfo));
+            StatusMessage = "Документ расшифрован с помощью OpenSSL";
+            RecordAudit("Расшифрование документа", "Успешно");
+        }
+        catch (InvalidOperationException exception)
+        {
+            StatusMessage = exception.Message;
+            RecordAudit("Расшифрование документа", $"Ошибка: {exception.Message}");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    public void SaveDraft()
+    {
+        if (SelectedDocument is null)
+        {
+            StatusMessage = "Сначала выберите документ";
+            return;
+        }
+
+        SelectedDocument.Content = DocumentText;
+        SelectedDocument.UpdatedAt = DateTimeOffset.Now;
+        OnPropertyChanged(nameof(DocumentInfo));
+        StatusMessage = "Черновик сохранен локально";
+        RecordAudit("Сохранение черновика", "Успешно");
+    }
+
+    public async Task<string> BuildEncryptedContainerJsonAsync(string password)
+    {
+        if (SelectedDocument is null)
+        {
+            return "{}";
+        }
+
+        await ValidateFragmentPasswordsAsync(SelectedDocument.Name, password);
+        var encryptedPayload = SelectedDocument.EncryptedPayload;
+        if (string.IsNullOrWhiteSpace(encryptedPayload))
+        {
+            encryptedPayload = await _cryptographyService.EncryptAsync(DocumentText, password);
+        }
+        else
+        {
+            await _cryptographyService.DecryptAsync(encryptedPayload, password);
+        }
+
+        var integrity = _integrityService.Create(GetProtectedValues(encryptedPayload), password);
+        var container = new
+        {
+            format = "interrogation.enc.v3",
+            cryptography = new
+            {
+                engine = "OpenSSL",
+                cipher = "AES-256-CBC",
+                kdf = "PBKDF2-HMAC-SHA256",
+                iterations = 200000
+            },
+            integrity = new
+            {
+                algorithm = "HMAC-SHA256",
+                kdf = "PBKDF2-HMAC-SHA256",
+                iterations = 200000,
+                salt = integrity.Salt,
+                tag = integrity.Tag
+            },
+            exportedAt = DateTimeOffset.Now,
+            role = CurrentRoleText,
+            document = new
+            {
+                SelectedDocument.Id,
+                SelectedDocument.Name,
+                SelectedDocument.CaseNumber,
+                SelectedDocument.Status,
+                SelectedDocument.Owner,
+                SelectedDocument.UpdatedAt
+            },
+            encryptedPayload,
+            fragments = Fragments
+                .Where(fragment => fragment.DocumentName == SelectedDocument.Name)
+                .Select(fragment => new
+                {
+                    fragment.Marker,
+                    encryptedPayload = fragment.EncryptedPayload,
+                    fragment.Length,
+                    fragment.CreatedAt
+                })
+                .ToArray()
+        };
+
+        return JsonSerializer.Serialize(container, new JsonSerializerOptions
+        {
+            WriteIndented = true
+        });
+    }
+
+    private async Task ValidateFragmentPasswordsAsync(string documentName, string password)
+    {
+        foreach (var fragment in Fragments.Where(item => item.DocumentName == documentName))
+        {
+            await _cryptographyService.DecryptAsync(fragment.EncryptedPayload, password);
+        }
+    }
+
+    private IEnumerable<string> GetProtectedValues(string? documentPayload)
+    {
+        yield return documentPayload ?? string.Empty;
+        if (SelectedDocument is null)
+        {
+            yield break;
+        }
+
+        foreach (var fragment in Fragments.Where(item => item.DocumentName == SelectedDocument.Name))
+        {
+            yield return fragment.Marker;
+            yield return fragment.EncryptedPayload;
+        }
+    }
+
+    public void RecordAudit(string action, string result, string? documentName = null)
+    {
+        var record = new AuditRecord(
+            DateTimeOffset.Now,
+            CurrentUserName,
+            action,
+            documentName ?? SelectedDocument?.Name ?? "Документ не выбран",
+            result);
+        _auditHistory.Insert(0, record);
+        ApplyAuditFilter();
+        try
+        {
+            _auditLogService.Append(record);
+        }
+        catch (IOException)
+        {
+            StatusMessage = "Операция выполнена, но журнал не удалось сохранить";
+        }
+    }
+
+    private void ApplyAuditFilter()
+    {
+        var query = _auditHistory.AsEnumerable();
+        if (!string.IsNullOrWhiteSpace(AuditSearchText))
+        {
+            query = query.Where(record =>
+                record.Action.Contains(AuditSearchText, StringComparison.OrdinalIgnoreCase) ||
+                record.DocumentName.Contains(AuditSearchText, StringComparison.OrdinalIgnoreCase) ||
+                record.UserName.Contains(AuditSearchText, StringComparison.OrdinalIgnoreCase));
+        }
+        query = AuditResultFilter switch
+        {
+            "Успешно" => query.Where(record => record.Result.StartsWith("Успешно", StringComparison.OrdinalIgnoreCase)),
+            "Ошибки" => query.Where(record => record.Result.StartsWith("Ошибка", StringComparison.OrdinalIgnoreCase)),
+            _ => query
+        };
+        AuditLog.Clear();
+        foreach (var record in query) AuditLog.Add(record);
+    }
+
+    private static string GetString(JsonElement element, string propertyName, string fallback)
+    {
+        return element.TryGetProperty(propertyName, out var property)
+            ? property.GetString() ?? fallback
+            : fallback;
+    }
+}
