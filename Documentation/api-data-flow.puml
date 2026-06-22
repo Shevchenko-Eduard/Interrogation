@@ -1,0 +1,63 @@
+@startuml api-data-flow
+
+skinparam responseMessageBelowArrow true
+
+participant Client as C
+participant Nginx as N
+participant Kestrel as K
+participant AuthMiddleware as Auth
+participant Controller as Ctrl
+participant UseCase as UC
+participant Cache as Cache
+participant Repository as R
+participant Database as DB
+
+C -> N: HTTP запрос
+N -> K: Проксирование\nзапроса
+K -> Auth: Проверка\nJWT токена
+
+alt Токен валидный
+    Auth -> Auth: Расшифровка JWT
+    Auth -> Auth: Извлечение roles/claims
+    Auth -> Ctrl: Передача с контекстом\nпользователя
+
+    Ctrl -> Ctrl: Проверка прав доступа
+    alt Доступ разрешен
+        Ctrl -> Ctrl: Валидация запроса
+
+        alt Валидация пройдена
+            Ctrl -> UC: Вызов бизнес-логики
+            UC -> Cache: Проверка кэша
+            UC <-- Cache: Проверка кэша
+
+            alt Данные в кэше
+                Cache --> UC: Возврат из кэша
+
+            else Данные не в кэше
+                UC -> R: Доступ к данным
+                R -> DB: Запрос к БД
+                DB --> R: Ответ с данными
+                R --> R: Преобразование\nданных в объекты
+                R --> Cache: Сохранение в кэш
+                R --> UC: Передача данных
+            end
+
+            UC --> Ctrl: Результат обработки
+            Ctrl --> Ctrl: Сериализация ответа
+            Ctrl --> K: Ответ контроллера
+
+        else Ошибка валидации
+            Ctrl --> K: Ошибка 400
+        end
+    else Доступ запрещен
+        Ctrl --> K: Ошибка 403
+    end
+
+else Токен невалидный
+    Auth --> K: Ошибка 401
+end
+
+K --> N: Ответ от Kestrel
+N --> C: Ответ от Nginx
+
+@enduml

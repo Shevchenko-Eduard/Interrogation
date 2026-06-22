@@ -1,4 +1,4 @@
-@startuml full-encryption-stream
+@startuml part-encryption-stream
 
 actor User as U
 participant Client as C
