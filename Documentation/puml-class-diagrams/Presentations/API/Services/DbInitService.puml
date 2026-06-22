@@ -1,0 +1,8 @@
+@startuml
+class DbInitService <<sealed>> {
+    + <<async>> StartAsync(cancellationToken:CancellationToken) : Task
+    + StopAsync(cancellationToken:CancellationToken) : Task
+}
+IHostedService <|-- DbInitService
+DbInitService o-> "_scopeFactory" IServiceScopeFactory
+@enduml

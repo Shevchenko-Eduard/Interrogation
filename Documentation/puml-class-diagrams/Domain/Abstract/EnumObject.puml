@@ -1,0 +1,20 @@
+@startuml
+abstract class "EnumObjectAbstract`1"<T> {
+    + Id : int <<get>>
+    - {static} _nextId : int
+    # EnumObjectAbstract()
+    # EnumObjectAbstract(id:int)
+    - {static} UpdateAll() : Lazy<HashSet<T>>
+    - {static} GetNextId() : int
+    + {static} FromId(id:ushort) : EnumObjectAbstract<T>
+    + <<override>> Equals(obj:object?) : bool
+    + Equals(enumObject:EnumObjectAbstract<T>) : bool
+    + <<override>> GetHashCode() : int
+}
+class "ReadOnlyCollection`1"<T> {
+}
+class "Lazy`1"<T> {
+}
+"EnumObjectAbstract`1" --> "All<T>" "ReadOnlyCollection`1"
+"EnumObjectAbstract`1" o-> "_all<HashSet<T>>" "Lazy`1"
+@enduml

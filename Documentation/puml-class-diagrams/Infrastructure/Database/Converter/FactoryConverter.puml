@@ -1,0 +1,5 @@
+@startuml
+class FactoryConverter <<static>> {
+    + {static} UseConverter(mutableEntityTypes:IEnumerable<Microsoft.EntityFrameworkCore.Metadata.IMutableEntityType>) : void
+}
+@enduml

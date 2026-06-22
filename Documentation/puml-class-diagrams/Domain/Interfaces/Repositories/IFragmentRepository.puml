@@ -1,0 +1,13 @@
+@startuml
+interface IFragmentRepository {
+}
+class "IBaseCreateRepository`1"<T> {
+}
+class "IBaseReadRepository`2"<T1,T2> {
+}
+class "IBaseDeleteRepository`1"<T> {
+}
+"IBaseCreateRepository`1" "<Fragment>" <|-- IFragmentRepository
+"IBaseReadRepository`2" "<Fragment,int>" <|-- IFragmentRepository
+"IBaseDeleteRepository`1" "<int>" <|-- IFragmentRepository
+@enduml

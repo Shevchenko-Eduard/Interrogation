@@ -1,0 +1,5 @@
+@startuml
+interface "IBaseDeleteRepository`1"<TValueId> {
+    DeleteAsync(id:TValueId) : Task
+}
+@enduml

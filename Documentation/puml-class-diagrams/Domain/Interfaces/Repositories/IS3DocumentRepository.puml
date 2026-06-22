@@ -1,0 +1,7 @@
+@startuml
+interface IS3DocumentRepository {
+    UploadAsync(fileStream:Stream, path:string) : Task
+    DownloadAsync(path:string) : Task<Stream>
+    DeleteAsync(path:string) : Task
+}
+@enduml

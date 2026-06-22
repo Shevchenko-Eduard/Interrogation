@@ -1,0 +1,820 @@
+@startuml
+class Clock <<sealed>> {
+    + {static} Now() : DateTimeOffset
+}
+IClock <|-- Clock
+Clock --> "Now" DateTimeOffset
+class DocumentKeyManager {
+    + Create() : string
+}
+IDocumentKeyManager <|-- DocumentKeyManager
+class SecretManager {
+    + Create(numberOfBytes:int) : string
+}
+ISecretManager <|-- SecretManager
+class DocumentDTOs <<static>> {
+}
+class Inner <<static>> {
+}
+class Request <<static>> {
+}
+class Response <<static>> {
+}
+class Create <<record>> {
+    + EncryptionTypeId : int <<get>> <<init>>
+    + SecretId : int <<get>> <<init>>
+    + CreatorId : string <<get>> <<init>>
+    + Name : string <<get>> <<init>>
+    + Description : string? <<get>> <<init>>
+    + ContentType : string <<get>> <<init>>
+    + Extension : string <<get>> <<init>>
+    + EncryptionAlgorithm : string? <<get>> <<init>>
+    + GetDocument(documentKeyGenerator:IDocumentKeyManager, clock:IClock) : Document
+}
+class Delete <<record>> {
+    + Id : int <<get>> <<init>>
+}
+class ReadById <<record>> {
+    + Id : int <<get>> <<init>>
+}
+class DownloadById <<record>> {
+    + Id : int <<get>> <<init>>
+}
+class Read <<record>> {
+}
+class Update <<record>> {
+    + Id : int <<get>> <<init>>
+    + Name : string? <<get>> <<init>>
+    + Description : string? <<get>> <<init>>
+    + GetDocument(document:Document) : Document
+}
+class Create <<record>> {
+    + EncryptionTypeId : int <<get>> <<init>>
+    + SecretId : int <<get>> <<init>>
+    + Name : string <<get>> <<init>>
+    + Description : string? <<get>> <<init>>
+    + EncryptionAlgorithm : string? <<get>> <<init>>
+}
+class Update <<record>> {
+    + Name : string? <<get>> <<init>>
+    + Description : string? <<get>> <<init>>
+}
+class Create <<record>> {
+    + Id : int <<get>> <<init>>
+    + EncryptionTypeId : int <<get>> <<init>>
+    + SecretId : int <<get>> <<init>>
+    + CreatorId : string <<get>> <<init>>
+    + Name : string <<get>> <<init>>
+    + Description : string? <<get>> <<init>>
+    + ContentType : string <<get>> <<init>>
+    + Extension : string <<get>> <<init>>
+    + DocumentKey : string <<get>> <<init>>
+    + EncryptionAlgorithm : string? <<get>> <<init>>
+    + {static} FromDocument(document:Document) : Create
+}
+class Read <<record>> {
+    + Id : int <<get>> <<init>>
+    + EncryptionTypeId : int <<get>> <<init>>
+    + CreatorId : string <<get>> <<init>>
+    + Name : string <<get>> <<init>>
+    + Description : string? <<get>> <<init>>
+    + ContentType : string <<get>> <<init>>
+    + Extension : string <<get>> <<init>>
+    + EncryptionAlgorithm : string? <<get>> <<init>>
+    + {static} FromDocument(document:Document) : Read
+}
+class ReadById <<record>> {
+    + Id : int <<get>> <<init>>
+    + EncryptionTypeId : int <<get>> <<init>>
+    + SecretId : int <<get>> <<init>>
+    + CreatorId : string <<get>> <<init>>
+    + Name : string <<get>> <<init>>
+    + Description : string? <<get>> <<init>>
+    + ContentType : string <<get>> <<init>>
+    + Extension : string <<get>> <<init>>
+    + EncryptionAlgorithm : string? <<get>> <<init>>
+    + {static} FromDocument(document:Document) : ReadById
+}
+class DownloadById <<record>> {
+    + Name : string <<get>> <<init>>
+    + ContentType : string <<get>> <<init>>
+    + Extension : string <<get>> <<init>>
+    + {static} FromDocument(document:Document, stream:Stream) : DownloadById
+}
+DocumentDTOs +-- Inner
+DocumentDTOs +-- Request
+DocumentDTOs +-- Response
+Inner +-- Create
+Create --> "Stream" Stream
+Inner +-- Delete
+Inner +-- ReadById
+Inner +-- DownloadById
+Inner +-- Read
+Inner +-- Update
+Request +-- Create
+Request +-- Update
+Response +-- Create
+Create --> "DateOfCreate" DateTimeOffset
+Response +-- Read
+Read --> "DateOfCreate" DateTimeOffset
+Response +-- ReadById
+ReadById --> "DateOfCreate" DateTimeOffset
+Response +-- DownloadById
+DownloadById --> "Stream" Stream
+class EncryptionTypeDTOs <<static>> {
+}
+class Inner <<static>> {
+}
+class Request <<static>> {
+}
+class Response <<static>> {
+}
+class ReadAll <<record>> {
+}
+class ReadById <<record>> {
+    + Id : int <<get>> <<init>>
+}
+class Read <<record>> {
+    + Id : int <<get>> <<init>>
+    + Name : string <<get>> <<init>>
+    + {static} FromEncryptionType(encryptionType:EncryptionType) : Read
+}
+EncryptionTypeDTOs +-- Inner
+EncryptionTypeDTOs +-- Request
+EncryptionTypeDTOs +-- Response
+Inner +-- ReadAll
+Inner +-- ReadById
+Response +-- Read
+class FragmentDTOs <<static>> {
+}
+class Inner <<static>> {
+}
+class Request <<static>> {
+}
+class Response <<static>> {
+}
+class Create <<record>> {
+    + DocumentId : int <<get>> <<init>>
+    + MarkerName : string <<get>> <<init>>
+    + Value : string <<get>> <<init>>
+    + GetFragment() : Fragment
+}
+class Delete <<record>> {
+    + Id : int <<get>> <<init>>
+}
+class ReadById <<record>> {
+    + Id : int <<get>> <<init>>
+}
+class ReadByDocumentId <<record>> {
+    + DocumentId : int <<get>> <<init>>
+}
+class Create <<record>> {
+    + Id : int <<get>> <<init>>
+    + DocumentId : int <<get>> <<init>>
+    + MarkerName : string <<get>> <<init>>
+    + Value : string <<get>> <<init>>
+    + {static} FromFragment(fragment:Fragment) : Create
+}
+class Read <<record>> {
+    + Id : int <<get>> <<init>>
+    + DocumentId : int <<get>> <<init>>
+    + MarkerName : string <<get>> <<init>>
+    + Value : string <<get>> <<init>>
+    + {static} FromFragment(fragment:Fragment) : Read
+}
+FragmentDTOs +-- Inner
+FragmentDTOs +-- Request
+FragmentDTOs +-- Response
+Inner +-- Create
+Inner +-- Delete
+Inner +-- ReadById
+Inner +-- ReadByDocumentId
+Response +-- Create
+Response +-- Read
+class SecretDTOs <<static>> {
+}
+class Inner <<static>> {
+}
+class Request <<static>> {
+}
+class Response <<static>> {
+}
+class Create <<record>> {
+    + NumberOfBytes : int <<get>> <<init>>
+    + GetSecret(secretGenerator:ISecretManager) : Secret
+}
+class Delete <<record>> {
+    + Id : int <<get>> <<init>>
+}
+class ReadById <<record>> {
+    + Id : int <<get>> <<init>>
+    + <<async>> GetSecret(secretRepository:ISecretRepository) : Task<Secret>
+}
+class Create <<record>> {
+    + NumberOfBytes : int <<get>> <<init>>
+}
+class Create <<record>> {
+    + Id : int <<get>> <<init>>
+    + Value : string <<get>> <<init>>
+    + {static} FromSecret(secret:Secret) : Create
+}
+class Read <<record>> {
+    + Id : int <<get>> <<init>>
+    + Value : string <<get>> <<init>>
+    + {static} FromSecret(secret:Secret) : Read
+}
+SecretDTOs +-- Inner
+SecretDTOs +-- Request
+SecretDTOs +-- Response
+Inner +-- Create
+Inner +-- Delete
+Inner +-- ReadById
+Request +-- Create
+Response +-- Create
+Response +-- Read
+interface "IAction`1"<TInput> {
+    Execute(input:TInput) : Task
+}
+interface "IAction`2"<TInput,TOutput> {
+    Execute(input:TInput) : Task<TOutput>
+}
+interface ICurrentUser {
+    Id : string? <<get>>
+    IsAuthenticated : bool <<get>>
+    + Email : string? <<get>>
+    + Name : string? <<get>>
+}
+interface "IQuestion`1"<TOutput> {
+    Ask() : Task<TOutput>
+}
+interface "IQuestion`2"<TOutput,TInput> {
+    Ask(input:TInput) : Task<TOutput>
+}
+interface IUnitOfWork {
+    BeginTransactionAsync(cancellationToken:CancellationToken) : Task
+    SaveChangesAsync(cancellationToken:CancellationToken) : Task<int>
+    CommitTransactionAsync(cancellationToken:CancellationToken) : Task
+    RollbackTransactionAsync(cancellationToken:CancellationToken) : Task
+}
+abstract class "EnumObjectAbstract`1"<T> {
+    + Id : int <<get>>
+    - {static} _nextId : int
+    # EnumObjectAbstract()
+    # EnumObjectAbstract(id:int)
+    - {static} UpdateAll() : Lazy<HashSet<T>>
+    - {static} GetNextId() : int
+    + {static} FromId(id:ushort) : EnumObjectAbstract<T>
+    + <<override>> Equals(obj:object?) : bool
+    + Equals(enumObject:EnumObjectAbstract<T>) : bool
+    + <<override>> GetHashCode() : int
+}
+class "ReadOnlyCollection`1"<T> {
+}
+class "Lazy`1"<T> {
+}
+"EnumObjectAbstract`1" --> "All<T>" "ReadOnlyCollection`1"
+"EnumObjectAbstract`1" o-> "_all<HashSet<T>>" "Lazy`1"
+abstract class "StatusObjectAbstract`1"<T> {
+    + Name : string <<get>>
+    # StatusObjectAbstract(name:string)
+    # StatusObjectAbstract(id:int, name:string)
+    + {static} FromName(name:string) : StatusObjectAbstract<T>
+    + <<override>> Equals(obj:object?) : bool
+    + Equals(status:StatusObjectAbstract<T>) : bool
+    + <<override>> GetHashCode() : int
+}
+class "EnumObjectAbstract`1"<T> {
+}
+"EnumObjectAbstract`1" "<T>" <|-- "StatusObjectAbstract`1"
+abstract class "StatusWithParentsObjectsAbstract`1"<T> {
+    # StatusWithParentsObjectsAbstract(name:string)
+    # StatusWithParentsObjectsAbstract(id:byte, name:string)
+    # StatusWithParentsObjectsAbstract(name:string, parents:IEnumerable<T>)
+    # StatusWithParentsObjectsAbstract(id:byte, name:string, parents:IEnumerable<T>)
+    + <<override>> Equals(obj:object?) : bool
+    + Equals(statusWithParents:StatusWithParentsObjectsAbstract<T>) : bool
+    + <<override>> GetHashCode() : int
+}
+class "StatusObjectAbstract`1"<T> {
+}
+"StatusObjectAbstract`1" "<T>" <|-- "StatusWithParentsObjectsAbstract`1"
+"StatusWithParentsObjectsAbstract`1" --> "Parents<T>" "IEnumerable`1"
+class Document <<sealed>> {
+    + Id : int <<get>> <<init>>
+    + EncryptionTypeId : int <<get>> <<init>>
+    + SecretId : int <<get>> <<init>>
+    + DocumentKey : string <<get>> <<init>>
+    + CreatorId : string <<get>> <<init>>
+    + Name : string <<get>> <<set>>
+    + Description : string? <<get>> <<set>>
+    + ContentType : string <<get>> <<init>>
+    + Extension : string <<get>> <<init>>
+    + EncryptionAlgorithm : string? <<get>> <<init>>
+    - Document()
+    + Document(encryptionTypeId:int, secretId:int, creatorId:string, name:string, description:string?, contentType:string, extension:string, encryptionAlgorithm:string?, documentKeyGenerator:IDocumentKeyManager, clock:IClock)
+}
+Document --> "DateOfCreate" DateTimeOffset
+Document --> "Secret" Secret
+Document --> "EncryptionType" EncryptionType
+Document --> "Fragments<Fragment>" "ICollection`1"
+Document --> "_documentKeyGenerator" IDocumentKeyManager
+Document --> "_clock" IClock
+class EncryptionType <<sealed>> {
+    - EncryptionType(name:string)
+}
+class "StatusObjectAbstract`1"<T> {
+}
+"StatusObjectAbstract`1" "<EncryptionType>" <|-- EncryptionType
+EncryptionType --> "Documents<Document>" "ICollection`1"
+EncryptionType o-> "Full" EncryptionType
+EncryptionType o-> "Part" EncryptionType
+EncryptionType o-> "None" EncryptionType
+class Fragment <<sealed>> {
+    + Id : int <<get>> <<init>>
+    + DocumentId : int <<get>> <<init>>
+    + MarkerName : string <<get>> <<init>>
+    + Value : string <<get>> <<init>>
+    - Fragment()
+    + Fragment(documentId:int, markerName:string, value:string)
+}
+Fragment --> "Document" Document
+class Secret <<sealed>> {
+    + Id : int <<get>> <<init>>
+    + Value : string <<get>> <<init>>
+    - Secret()
+    + Secret(value:string)
+}
+Secret --> "Document" Document
+interface IClock {
+}
+IClock --> "Now" DateTimeOffset
+interface IDocumentKeyManager {
+    Create() : string
+}
+interface ISecretManager {
+    Create(numberOfBytes:int) : string
+}
+class DatabaseInitialization {
+    - <<readonly>> _logger : ILogger<DatabaseInitialization>?
+    + <<async>> InitializeAsync(cancellationToken:CancellationToken) : Task
+}
+class "ILogger`1"<T> {
+}
+IDatabaseInitialization <|-- DatabaseInitialization
+DatabaseInitialization o-> "_context" ProgramContext
+DatabaseInitialization o-> "_hostEnvironment" IHostEnvironment
+class ProgramContext <<partial>> {
+    + ProgramContext(options:DbContextOptions<ProgramContext>)
+    # <<override>> OnConfiguring(optionsBuilder:DbContextOptionsBuilder) : void
+    # <<override>> OnModelCreating(modelBuilder:ModelBuilder) : void
+}
+DbContext <|-- ProgramContext
+class ProgramContext <<partial>> {
+}
+class "DbSet`1"<T> {
+}
+ProgramContext --> "Documents<Domain.Entity.Document>" "DbSet`1"
+ProgramContext --> "EncryptionTypes<Domain.Entity.EncryptionType>" "DbSet`1"
+ProgramContext --> "Fragments<Domain.Entity.Fragment>" "DbSet`1"
+ProgramContext --> "Secrets<Domain.Entity.Secret>" "DbSet`1"
+class EfDocumentRepository <<sealed>> {
+    + <<async>> AddAsync(entity:Document) : Task
+    + <<async>> DeleteAsync(id:int) : Task
+    + <<async>> GetAsync(expression:Expression<Func<Document, bool>>) : Task<IEnumerable<Document>>
+    + <<async>> GetDocumentKeyByIdAsync(id:int) : Task<string?>
+    + <<async>> UpdateAsync(entity:Document) : Task
+    + <<async>> GetByIdAsync(id:int) : Task<Document?>
+}
+IDocumentRepository <|-- EfDocumentRepository
+EfDocumentRepository o-> "_context" ProgramContext
+class EfEncryptionTypeRepository <<sealed>> {
+    + <<async>> GetAllAsync() : Task<List<EncryptionType>>
+    + <<async>> GetAsync(expression:Expression<Func<EncryptionType, bool>>) : Task<IEnumerable<EncryptionType>>
+    <<async>> - GetByIdAsync(id:int) : Task<EncryptionType?>
+}
+IEncryptionTypeRepository <|-- EfEncryptionTypeRepository
+EfEncryptionTypeRepository o-> "_context" ProgramContext
+class EfFragmentRepository <<sealed>> {
+    + <<async>> AddAsync(entity:Fragment) : Task
+    + <<async>> DeleteAsync(id:int) : Task
+    + <<async>> GetAsync(expression:Expression<Func<Fragment, bool>>) : Task<IEnumerable<Fragment>>
+    + <<async>> GetByIdAsync(id:int) : Task<Fragment?>
+}
+IFragmentRepository <|-- EfFragmentRepository
+EfFragmentRepository o-> "_context" ProgramContext
+class EfSecretRepository <<sealed>> {
+    + <<async>> AddAsync(entity:Secret) : Task
+    + <<async>> DeleteAsync(id:int) : Task
+    + <<async>> GetAsync(expression:Expression<Func<Secret, bool>>) : Task<IEnumerable<Secret>>
+    + <<async>> GetByIdAsync(id:int) : Task<Secret?>
+}
+ISecretRepository <|-- EfSecretRepository
+EfSecretRepository o-> "_context" ProgramContext
+class EfUnitOfWork <<sealed>> {
+    - _currentTransaction : IDbContextTransaction?
+    - _disposed : bool
+    + EfUnitOfWork(context:ProgramContext)
+    + <<async>> BeginTransactionAsync(cancellationToken:CancellationToken) : Task
+    + <<async>> SaveChangesAsync(cancellationToken:CancellationToken) : Task<int>
+    + <<async>> CommitTransactionAsync(cancellationToken:CancellationToken) : Task
+    + <<async>> RollbackTransactionAsync(cancellationToken:CancellationToken) : Task
+    + Dispose() : void
+}
+IUnitOfWork <|-- EfUnitOfWork
+IDisposable <|-- EfUnitOfWork
+EfUnitOfWork --> "_context" ProgramContext
+interface IAppSecretManager {
+    GetSecretAsync() : Task<string>
+}
+interface ICryptograph {
+    Encrypt(value:string) : string
+    Decrypt(value:string) : string
+}
+interface IHostEnvironment {
+    IsProduction() : bool
+    IsDevelopment() : bool
+    IsStaging() : bool
+    CurrentEnvironment : string <<get>>
+}
+class MinioDocumentRepository <<sealed>> {
+    - <<readonly>> bucket : string = "documents"
+    + DeleteAsync(path:string) : Task
+    + DownloadAsync(path:string) : Task<Stream>
+    + UploadAsync(fileStream:Stream, path:string) : Task
+}
+IS3DocumentRepository <|-- MinioDocumentRepository
+MinioDocumentRepository o-> "_minioRepository" IS3Repository
+class MinioRepository <<sealed>> {
+    + <<async>> DeleteAsync(path:string, bucket:string) : Task
+    + <<async>> DownloadAsync(path:string, bucket:string) : Task<Stream>
+    + <<async>> UploadAsync(fileStream:Stream, path:string, bucket:string) : Task
+}
+IS3Repository <|-- MinioRepository
+MinioRepository o-> "_minioClient" IMinioClient
+class CurrentUserService <<sealed>> {
+    + Id : string? <<get>>
+    + IsAuthenticated : bool <<get>>
+    + Email : string? <<get>>
+    + Name : string? <<get>>
+}
+ICurrentUser <|-- CurrentUserService
+CurrentUserService o-> "_httpContextAccessor" IHttpContextAccessor
+CurrentUserService --> "User" ClaimsPrincipal
+class HostEnvironment <<sealed>> {
+    + CurrentEnvironment : string <<get>>
+    + IsDevelopment() : bool
+    + IsProduction() : bool
+    + IsStaging() : bool
+}
+HostEnvironment o-> "_hostEnvironment" IHostEnvironment
+class CreateDocumentUseCase {
+    + <<async>> Execute(input:DocumentDTOs.Inner.Create) : Task<DocumentDTOs.Response.Create>
+}
+class "IAction`2"<T1,T2> {
+}
+"IAction`2" "<DocumentDTOs.Inner.Create,DocumentDTOs.Response.Create>" <|-- CreateDocumentUseCase
+CreateDocumentUseCase o-> "_documentRepository" IDocumentRepository
+CreateDocumentUseCase o-> "_documentS3Repository" IS3DocumentRepository
+CreateDocumentUseCase o-> "_unitOfWork" IUnitOfWork
+CreateDocumentUseCase o-> "_clock" IClock
+CreateDocumentUseCase o-> "_documentKeyManager" IDocumentKeyManager
+class DeleteDocumentUseCase {
+    + <<async>> Execute(input:DocumentDTOs.Inner.Delete) : Task
+}
+class "IAction`1"<T> {
+}
+"IAction`1" "<DocumentDTOs.Inner.Delete>" <|-- DeleteDocumentUseCase
+DeleteDocumentUseCase o-> "_documentRepository" IDocumentRepository
+DeleteDocumentUseCase o-> "_documentS3Repository" IS3DocumentRepository
+DeleteDocumentUseCase o-> "_unitOfWork" IUnitOfWork
+class DownloadByIdDocumentUseCase {
+    + <<async>> Ask(input:DocumentDTOs.Inner.DownloadById) : Task<DocumentDTOs.Response.DownloadById>
+}
+class "IQuestion`2"<T1,T2> {
+}
+"IQuestion`2" "<DocumentDTOs.Response.DownloadById,DocumentDTOs.Inner.DownloadById>" <|-- DownloadByIdDocumentUseCase
+DownloadByIdDocumentUseCase o-> "_documentRepository" IDocumentRepository
+DownloadByIdDocumentUseCase o-> "_s3DocumentRepository" IS3DocumentRepository
+class ReadByIdDocumentUseCase {
+    + <<async>> Ask(input:DocumentDTOs.Inner.ReadById) : Task<DocumentDTOs.Response.ReadById>
+}
+class "IQuestion`2"<T1,T2> {
+}
+"IQuestion`2" "<DocumentDTOs.Response.ReadById,DocumentDTOs.Inner.ReadById>" <|-- ReadByIdDocumentUseCase
+ReadByIdDocumentUseCase o-> "_documentRepository" IDocumentRepository
+class ReadDocumentUseCase {
+    + <<async>> Ask(input:DocumentDTOs.Inner.Read) : Task<IEnumerable<DocumentDTOs.Response.Read>>
+}
+class "IQuestion`2"<T1,T2> {
+}
+"IQuestion`2" "<IEnumerable<DocumentDTOs.Response.Read>,DocumentDTOs.Inner.Read>" <|-- ReadDocumentUseCase
+ReadDocumentUseCase o-> "_documentRepository" IDocumentRepository
+class UpdateDocumentUseCase {
+    + <<async>> Execute(input:DocumentDTOs.Inner.Update) : Task
+}
+class "IAction`1"<T> {
+}
+"IAction`1" "<DocumentDTOs.Inner.Update>" <|-- UpdateDocumentUseCase
+UpdateDocumentUseCase o-> "_documentRepository" IDocumentRepository
+UpdateDocumentUseCase o-> "_unitOfWork" IUnitOfWork
+class ReadByIdEncryptionTypeUseCase {
+    + <<async>> Ask(input:EncryptionTypeDTOs.Inner.ReadById) : Task<EncryptionTypeDTOs.Response.Read>
+}
+class "IQuestion`2"<T1,T2> {
+}
+"IQuestion`2" "<EncryptionTypeDTOs.Response.Read,EncryptionTypeDTOs.Inner.ReadById>" <|-- ReadByIdEncryptionTypeUseCase
+ReadByIdEncryptionTypeUseCase o-> "_encryptionTypeRepository" IEncryptionTypeRepository
+class ReadEncryptionTypeUseCase {
+    + <<async>> Ask(input:EncryptionTypeDTOs.Inner.ReadAll) : Task<List<EncryptionTypeDTOs.Response.Read>>
+}
+class "IQuestion`2"<T1,T2> {
+}
+"IQuestion`2" "<List<EncryptionTypeDTOs.Response.Read>,EncryptionTypeDTOs.Inner.ReadAll>" <|-- ReadEncryptionTypeUseCase
+ReadEncryptionTypeUseCase o-> "_encryptionTypeRepository" IEncryptionTypeRepository
+class CreateFragmentUseCase {
+    + <<async>> Execute(input:FragmentDTOs.Inner.Create) : Task<FragmentDTOs.Response.Create>
+}
+class "IAction`2"<T1,T2> {
+}
+"IAction`2" "<FragmentDTOs.Inner.Create,FragmentDTOs.Response.Create>" <|-- CreateFragmentUseCase
+CreateFragmentUseCase o-> "_fragmentRepository" IFragmentRepository
+CreateFragmentUseCase o-> "_unitOfWork" IUnitOfWork
+class DeleteFragmentUseCase {
+    + <<async>> Execute(input:FragmentDTOs.Inner.Delete) : Task
+}
+class "IAction`1"<T> {
+}
+"IAction`1" "<FragmentDTOs.Inner.Delete>" <|-- DeleteFragmentUseCase
+DeleteFragmentUseCase o-> "_fragmentRepository" IFragmentRepository
+DeleteFragmentUseCase o-> "_unitOfWork" IUnitOfWork
+class ReadByDocumentIdFragmentUseCase {
+    + <<async>> Ask(input:FragmentDTOs.Inner.ReadByDocumentId) : Task<List<FragmentDTOs.Response.Read>>
+}
+class "IQuestion`2"<T1,T2> {
+}
+"IQuestion`2" "<List<FragmentDTOs.Response.Read>,FragmentDTOs.Inner.ReadByDocumentId>" <|-- ReadByDocumentIdFragmentUseCase
+ReadByDocumentIdFragmentUseCase o-> "_fragmentRepository" IFragmentRepository
+class ReadByIdFragmentUseCase {
+    + <<async>> Ask(input:FragmentDTOs.Inner.ReadById) : Task<FragmentDTOs.Response.Read>
+}
+class "IQuestion`2"<T1,T2> {
+}
+"IQuestion`2" "<FragmentDTOs.Response.Read,FragmentDTOs.Inner.ReadById>" <|-- ReadByIdFragmentUseCase
+ReadByIdFragmentUseCase o-> "_fragmentRepository" IFragmentRepository
+class CreateSecretUseCase <<sealed>> {
+    + <<async>> Execute(input:SecretDTOs.Inner.Create) : Task<SecretDTOs.Response.Create>
+}
+class "IAction`2"<T1,T2> {
+}
+"IAction`2" "<SecretDTOs.Inner.Create,SecretDTOs.Response.Create>" <|-- CreateSecretUseCase
+CreateSecretUseCase o-> "_secretRepository" ISecretRepository
+CreateSecretUseCase o-> "_unitOfWork" IUnitOfWork
+CreateSecretUseCase o-> "_secretGenerator" ISecretManager
+class DeleteSecretUseCase <<sealed>> {
+    + <<async>> Execute(input:SecretDTOs.Inner.Delete) : Task
+}
+class "IAction`1"<T> {
+}
+"IAction`1" "<SecretDTOs.Inner.Delete>" <|-- DeleteSecretUseCase
+DeleteSecretUseCase o-> "_secretRepository" ISecretRepository
+DeleteSecretUseCase o-> "_unitOfWork" IUnitOfWork
+class ReadByIdSecretUseCase <<sealed>> {
+    + <<async>> Ask(input:SecretDTOs.Inner.ReadById) : Task<SecretDTOs.Response.Read>
+}
+class "IQuestion`2"<T1,T2> {
+}
+"IQuestion`2" "<SecretDTOs.Response.Read,SecretDTOs.Inner.ReadById>" <|-- ReadByIdSecretUseCase
+ReadByIdSecretUseCase o-> "_secretRepository" ISecretRepository
+interface IDocumentRepository {
+    GetDocumentKeyByIdAsync(id:int) : Task<string?>
+}
+class "IBaseCrudRepository`2"<T1,T2> {
+}
+"IBaseCrudRepository`2" "<Document,int>" <|-- IDocumentRepository
+interface IEncryptionTypeRepository {
+    GetAllAsync() : Task<List<EncryptionType>>
+}
+class "IBaseReadRepository`2"<T1,T2> {
+}
+"IBaseReadRepository`2" "<EncryptionType,int>" <|-- IEncryptionTypeRepository
+interface IFragmentRepository {
+}
+class "IBaseCreateRepository`1"<T> {
+}
+class "IBaseReadRepository`2"<T1,T2> {
+}
+class "IBaseDeleteRepository`1"<T> {
+}
+"IBaseCreateRepository`1" "<Fragment>" <|-- IFragmentRepository
+"IBaseReadRepository`2" "<Fragment,int>" <|-- IFragmentRepository
+"IBaseDeleteRepository`1" "<int>" <|-- IFragmentRepository
+interface IS3DocumentRepository {
+    UploadAsync(fileStream:Stream, path:string) : Task
+    DownloadAsync(path:string) : Task<Stream>
+    DeleteAsync(path:string) : Task
+}
+interface ISecretRepository {
+}
+class "IBaseCreateRepository`1"<T> {
+}
+class "IBaseReadRepository`2"<T1,T2> {
+}
+class "IBaseDeleteRepository`1"<T> {
+}
+"IBaseCreateRepository`1" "<Secret>" <|-- ISecretRepository
+"IBaseReadRepository`2" "<Secret,int>" <|-- ISecretRepository
+"IBaseDeleteRepository`1" "<int>" <|-- ISecretRepository
+class DocumentConf {
+    + Configure(builder:EntityTypeBuilder<Document>) : void
+}
+class "IEntityTypeConfiguration`1"<T> {
+}
+"IEntityTypeConfiguration`1" "<Document>" <|-- DocumentConf
+class EncryptionTypeConf {
+    + Configure(builder:EntityTypeBuilder<EncryptionType>) : void
+}
+class "IEntityTypeConfiguration`1"<T> {
+}
+"IEntityTypeConfiguration`1" "<EncryptionType>" <|-- EncryptionTypeConf
+class FragmentConf {
+    + Configure(builder:EntityTypeBuilder<Fragment>) : void
+}
+class "IEntityTypeConfiguration`1"<T> {
+}
+"IEntityTypeConfiguration`1" "<Fragment>" <|-- FragmentConf
+class SecretConf {
+    + Configure(builder:EntityTypeBuilder<Secret>) : void
+}
+class "IEntityTypeConfiguration`1"<T> {
+}
+"IEntityTypeConfiguration`1" "<Secret>" <|-- SecretConf
+class FactoryConverter <<static>> {
+    + {static} UseConverter(mutableEntityTypes:IEnumerable<Microsoft.EntityFrameworkCore.Metadata.IMutableEntityType>) : void
+}
+class GuidToStringConverter {
+    + GuidToStringConverter()
+}
+class "ValueConverter`2"<T1,T2> {
+}
+"ValueConverter`2" "<Guid,string>" <|-- GuidToStringConverter
+interface IDatabaseInitialization {
+    InitializeAsync(cancellationToken:CancellationToken) : Task
+}
+class DependencyInjectionConfig <<static>> <<partial>> {
+    + {static} AddApplicationServices(services:IServiceCollection) : IServiceCollection
+}
+class DependencyInjectionConfig <<static>> <<partial>> {
+    + {static} AddRepositories(services:IServiceCollection) : IServiceCollection
+}
+class KeycloakSchema <<sealed>> {
+    + AuthServerUrl : string <<get>>
+    + Realm : string <<get>>
+    + Resource : string <<get>>
+    + Secret : string <<get>>
+    + SslRequired : string <<get>>
+    + VerifyTokenAudience : bool <<get>>
+    + MetadataAddress : string <<get>>
+    + <<const>> RoleClaimType : string = "roles"
+    + <<async>> AuthorizationEndpoint() : Task<string>
+    + <<async>> TokenEndpoint() : Task<string>
+    + <<async>> IssuerEndpoint() : Task<string>
+    - _oidcConfig : Dictionary<string, object>?
+    + <<async>> OidcConfigurationAsync() : Task<Dictionary<string, object>>
+}
+KeycloakSchema o-> "_kcSettings" IConfigurationSection
+class MinIoSchema <<sealed>> {
+    + Endpoint : string <<get>>
+    + Username : string <<get>>
+    + Password : string <<get>>
+    + Https : bool <<get>>
+}
+MinIoSchema o-> "minioSettings" IConfigurationSection
+class PostgresSchema <<sealed>> {
+    + Host : string <<get>>
+    + Port : int <<get>>
+    + Database : string <<get>>
+    + Username : string <<get>>
+    + Password : string <<get>>
+}
+PostgresSchema o-> "dbSettings" IConfigurationSection
+class RedisSchema <<sealed>> {
+    + Endpoint : string <<get>>
+    + InstanceName : string? <<get>>
+    + Password : string? <<get>>
+}
+RedisSchema o-> "redisSettings" IConfigurationSection
+class AppInitService <<static>> {
+    + {static} AddAppInit(builder:WebApplicationBuilder) : WebApplicationBuilder
+}
+class DbInitService <<sealed>> {
+    + <<async>> StartAsync(cancellationToken:CancellationToken) : Task
+    + StopAsync(cancellationToken:CancellationToken) : Task
+}
+IHostedService <|-- DbInitService
+DbInitService o-> "_scopeFactory" IServiceScopeFactory
+class KeycloakService <<static>> {
+    + {static} AddKeycloak(services:IServiceCollection, configuration:IConfiguration) : IServiceCollection
+    + {static} AddKeycloakAuthentication(services:IServiceCollection, schema:KeycloakSchema) : IServiceCollection
+    + {static} AddKeycloakAuthorization(services:IServiceCollection, schema:KeycloakSchema) : IServiceCollection
+}
+class MinioService <<static>> {
+    + {static} AddMinioClient(services:IServiceCollection, configuration:IConfiguration) : IServiceCollection
+}
+class PostgresService <<static>> {
+    + {static} AddPostgres(services:IServiceCollection, configuration:IConfiguration) : IServiceCollection
+    - {static} GetConnectionString(postgresSchema:PostgresSchema) : string
+}
+class RedisService <<static>> {
+    + {static} AddRedis(services:IServiceCollection, configuration:IConfiguration) : IServiceCollection
+}
+class SwaggerService <<static>> {
+    + {static} AddSwagger(services:IServiceCollection, configuration:IConfiguration) : IServiceCollection
+    + {static} UseSwaggerMap(app:WebApplication, configuration:IConfiguration) : WebApplication
+}
+class DocumentController <<sealed>> {
+    + <<async>> Create(file:IFormFile, request:DocumentDTOs.Request.Create) : Task<IActionResult>
+    + <<async>> Update(id:int, request:DocumentDTOs.Request.Update) : Task<IActionResult>
+    + <<async>> Delete(id:int) : Task<IActionResult>
+    + <<async>> Read() : Task<IActionResult>
+    + <<async>> ReadById(id:int) : Task<IActionResult>
+    + <<async>> DownloadById(id:int) : Task<IActionResult>
+}
+ControllerBase <|-- DocumentController
+DocumentController o-> "_documentRepository" IDocumentRepository
+DocumentController o-> "_s3DocumentRepository" IS3DocumentRepository
+DocumentController o-> "_clock" IClock
+DocumentController o-> "_documentKeyManager" IDocumentKeyManager
+DocumentController o-> "_unitOfWork" IUnitOfWork
+DocumentController o-> "_currentUser" ICurrentUser
+class EncryptionTypeController <<sealed>> {
+    + <<async>> Read() : Task<IActionResult>
+    + <<async>> ReadById(id:int) : Task<IActionResult>
+}
+ControllerBase <|-- EncryptionTypeController
+EncryptionTypeController o-> "_encryptionTypeRepository" IEncryptionTypeRepository
+class FragmentController <<sealed>> {
+    + <<async>> Create(create:FragmentDTOs.Inner.Create) : Task<IActionResult>
+    + <<async>> Delete(id:int) : Task<IActionResult>
+    + <<async>> ReadById(id:int) : Task<IActionResult>
+    + <<async>> ReadByDocumentId(id:int) : Task<IActionResult>
+}
+ControllerBase <|-- FragmentController
+FragmentController o-> "_fragmentRepository" IFragmentRepository
+FragmentController o-> "_unitOfWork" IUnitOfWork
+class SecretController <<sealed>> {
+    + <<async>> Create(input:SecretDTOs.Request.Create) : Task<IActionResult>
+    + <<async>> Delete(id:int) : Task<IActionResult>
+    + <<async>> ReadById(id:int) : Task<IActionResult>
+}
+ControllerBase <|-- SecretController
+SecretController o-> "_secretRepository" ISecretRepository
+SecretController o-> "_unitOfWork" IUnitOfWork
+SecretController o-> "_secretManager" ISecretManager
+interface "IBaseCrudRepository`2"<TValue,TValueId> {
+}
+class "IBaseCreateRepository`1"<T> {
+}
+class "IBaseReadRepository`2"<T1,T2> {
+}
+class "IBaseUpdateRepository`1"<T> {
+}
+class "IBaseDeleteRepository`1"<T> {
+}
+"IBaseCreateRepository`1" "<TValue>" <|-- "IBaseCrudRepository`2"
+"IBaseReadRepository`2" "<TValue,TValueId>" <|-- "IBaseCrudRepository`2"
+"IBaseUpdateRepository`1" "<TValue>" <|-- "IBaseCrudRepository`2"
+"IBaseDeleteRepository`1" "<TValueId>" <|-- "IBaseCrudRepository`2"
+interface "IBaseEnumObjectAbstract`1"<T> {
+}
+class "IBaseReadRepository`2"<T1,T2> {
+}
+class "EnumObjectAbstract`1"<T> {
+}
+"IBaseReadRepository`2" "<T,int>" <|-- "IBaseEnumObjectAbstract`1"
+interface "IBaseStatusObjectRepository`1"<T> {
+    GetByNameAsync(name:string) : Task<T?>
+}
+class "IBaseEnumObjectAbstract`1"<T> {
+}
+class "StatusObjectAbstract`1"<T> {
+}
+"IBaseEnumObjectAbstract`1" "<T>" <|-- "IBaseStatusObjectRepository`1"
+interface IS3Repository {
+    UploadAsync(fileStream:Stream, path:string, bucket:string) : Task
+    DownloadAsync(path:string, bucket:string) : Task<Stream>
+    DeleteAsync(path:string, bucket:string) : Task
+}
+interface "IBaseCreateRepository`1"<TValue> {
+    AddAsync(entity:TValue) : Task
+}
+interface "IBaseDeleteRepository`1"<TValueId> {
+    DeleteAsync(id:TValueId) : Task
+}
+interface "IBaseReadRepository`2"<TValue,TValueId> {
+    GetByIdAsync(id:TValueId) : Task<TValue?>
+    GetAsync(expression:Expression<Func<TValue, bool>>) : Task<IEnumerable<TValue>>
+}
+interface "IBaseUpdateRepository`1"<TValue> {
+    UpdateAsync(entity:TValue) : Task
+}
+@enduml

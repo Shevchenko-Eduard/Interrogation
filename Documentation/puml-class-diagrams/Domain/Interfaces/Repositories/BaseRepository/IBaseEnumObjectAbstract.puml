@@ -1,0 +1,9 @@
+@startuml
+interface "IBaseEnumObjectAbstract`1"<T> {
+}
+class "IBaseReadRepository`2"<T1,T2> {
+}
+class "EnumObjectAbstract`1"<T> {
+}
+"IBaseReadRepository`2" "<T,int>" <|-- "IBaseEnumObjectAbstract`1"
+@enduml

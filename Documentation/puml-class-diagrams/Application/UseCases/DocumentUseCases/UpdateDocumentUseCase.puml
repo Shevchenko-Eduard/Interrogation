@@ -1,0 +1,10 @@
+@startuml
+class UpdateDocumentUseCase {
+    + <<async>> Execute(input:DocumentDTOs.Inner.Update) : Task
+}
+class "IAction`1"<T> {
+}
+"IAction`1" "<DocumentDTOs.Inner.Update>" <|-- UpdateDocumentUseCase
+UpdateDocumentUseCase o-> "_documentRepository" IDocumentRepository
+UpdateDocumentUseCase o-> "_unitOfWork" IUnitOfWork
+@enduml

@@ -1,0 +1,7 @@
+@startuml
+class KeycloakService <<static>> {
+    + {static} AddKeycloak(services:IServiceCollection, configuration:IConfiguration) : IServiceCollection
+    + {static} AddKeycloakAuthentication(services:IServiceCollection, schema:KeycloakSchema) : IServiceCollection
+    + {static} AddKeycloakAuthorization(services:IServiceCollection, schema:KeycloakSchema) : IServiceCollection
+}
+@enduml

@@ -1,0 +1,10 @@
+@startuml
+class PostgresSchema <<sealed>> {
+    + Host : string <<get>>
+    + Port : int <<get>>
+    + Database : string <<get>>
+    + Username : string <<get>>
+    + Password : string <<get>>
+}
+PostgresSchema o-> "dbSettings" IConfigurationSection
+@enduml

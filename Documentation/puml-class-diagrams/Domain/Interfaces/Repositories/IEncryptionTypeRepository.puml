@@ -1,0 +1,8 @@
+@startuml
+interface IEncryptionTypeRepository {
+    GetAllAsync() : Task<List<EncryptionType>>
+}
+class "IBaseReadRepository`2"<T1,T2> {
+}
+"IBaseReadRepository`2" "<EncryptionType,int>" <|-- IEncryptionTypeRepository
+@enduml

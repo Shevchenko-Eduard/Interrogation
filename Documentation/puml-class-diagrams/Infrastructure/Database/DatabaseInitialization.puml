@@ -1,0 +1,11 @@
+@startuml
+class DatabaseInitialization {
+    - <<readonly>> _logger : ILogger<DatabaseInitialization>?
+    + <<async>> InitializeAsync(cancellationToken:CancellationToken) : Task
+}
+class "ILogger`1"<T> {
+}
+IDatabaseInitialization <|-- DatabaseInitialization
+DatabaseInitialization o-> "_context" ProgramContext
+DatabaseInitialization o-> "_hostEnvironment" IHostEnvironment
+@enduml

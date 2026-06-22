@@ -1,0 +1,16 @@
+@startuml
+interface "IBaseCrudRepository`2"<TValue,TValueId> {
+}
+class "IBaseCreateRepository`1"<T> {
+}
+class "IBaseReadRepository`2"<T1,T2> {
+}
+class "IBaseUpdateRepository`1"<T> {
+}
+class "IBaseDeleteRepository`1"<T> {
+}
+"IBaseCreateRepository`1" "<TValue>" <|-- "IBaseCrudRepository`2"
+"IBaseReadRepository`2" "<TValue,TValueId>" <|-- "IBaseCrudRepository`2"
+"IBaseUpdateRepository`1" "<TValue>" <|-- "IBaseCrudRepository`2"
+"IBaseDeleteRepository`1" "<TValueId>" <|-- "IBaseCrudRepository`2"
+@enduml

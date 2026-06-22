@@ -1,0 +1,10 @@
+@startuml
+class DownloadByIdDocumentUseCase {
+    + <<async>> Ask(input:DocumentDTOs.Inner.DownloadById) : Task<DocumentDTOs.Response.DownloadById>
+}
+class "IQuestion`2"<T1,T2> {
+}
+"IQuestion`2" "<DocumentDTOs.Response.DownloadById,DocumentDTOs.Inner.DownloadById>" <|-- DownloadByIdDocumentUseCase
+DownloadByIdDocumentUseCase o-> "_documentRepository" IDocumentRepository
+DownloadByIdDocumentUseCase o-> "_s3DocumentRepository" IS3DocumentRepository
+@enduml

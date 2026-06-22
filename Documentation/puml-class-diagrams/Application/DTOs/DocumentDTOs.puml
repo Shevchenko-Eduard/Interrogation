@@ -1,0 +1,111 @@
+@startuml
+class DocumentDTOs <<static>> {
+}
+class Inner <<static>> {
+}
+class Request <<static>> {
+}
+class Response <<static>> {
+}
+class Create <<record>> {
+    + EncryptionTypeId : int <<get>> <<init>>
+    + SecretId : int <<get>> <<init>>
+    + CreatorId : string <<get>> <<init>>
+    + Name : string <<get>> <<init>>
+    + Description : string? <<get>> <<init>>
+    + ContentType : string <<get>> <<init>>
+    + Extension : string <<get>> <<init>>
+    + EncryptionAlgorithm : string? <<get>> <<init>>
+    + GetDocument(documentKeyGenerator:IDocumentKeyManager, clock:IClock) : Document
+}
+class Delete <<record>> {
+    + Id : int <<get>> <<init>>
+}
+class ReadById <<record>> {
+    + Id : int <<get>> <<init>>
+}
+class DownloadById <<record>> {
+    + Id : int <<get>> <<init>>
+}
+class Read <<record>> {
+}
+class Update <<record>> {
+    + Id : int <<get>> <<init>>
+    + Name : string? <<get>> <<init>>
+    + Description : string? <<get>> <<init>>
+    + GetDocument(document:Document) : Document
+}
+class Create <<record>> {
+    + EncryptionTypeId : int <<get>> <<init>>
+    + SecretId : int <<get>> <<init>>
+    + Name : string <<get>> <<init>>
+    + Description : string? <<get>> <<init>>
+    + EncryptionAlgorithm : string? <<get>> <<init>>
+}
+class Update <<record>> {
+    + Name : string? <<get>> <<init>>
+    + Description : string? <<get>> <<init>>
+}
+class Create <<record>> {
+    + Id : int <<get>> <<init>>
+    + EncryptionTypeId : int <<get>> <<init>>
+    + SecretId : int <<get>> <<init>>
+    + CreatorId : string <<get>> <<init>>
+    + Name : string <<get>> <<init>>
+    + Description : string? <<get>> <<init>>
+    + ContentType : string <<get>> <<init>>
+    + Extension : string <<get>> <<init>>
+    + DocumentKey : string <<get>> <<init>>
+    + EncryptionAlgorithm : string? <<get>> <<init>>
+    + {static} FromDocument(document:Document) : Create
+}
+class Read <<record>> {
+    + Id : int <<get>> <<init>>
+    + EncryptionTypeId : int <<get>> <<init>>
+    + CreatorId : string <<get>> <<init>>
+    + Name : string <<get>> <<init>>
+    + Description : string? <<get>> <<init>>
+    + ContentType : string <<get>> <<init>>
+    + Extension : string <<get>> <<init>>
+    + EncryptionAlgorithm : string? <<get>> <<init>>
+    + {static} FromDocument(document:Document) : Read
+}
+class ReadById <<record>> {
+    + Id : int <<get>> <<init>>
+    + EncryptionTypeId : int <<get>> <<init>>
+    + SecretId : int <<get>> <<init>>
+    + CreatorId : string <<get>> <<init>>
+    + Name : string <<get>> <<init>>
+    + Description : string? <<get>> <<init>>
+    + ContentType : string <<get>> <<init>>
+    + Extension : string <<get>> <<init>>
+    + EncryptionAlgorithm : string? <<get>> <<init>>
+    + {static} FromDocument(document:Document) : ReadById
+}
+class DownloadById <<record>> {
+    + Name : string <<get>> <<init>>
+    + ContentType : string <<get>> <<init>>
+    + Extension : string <<get>> <<init>>
+    + {static} FromDocument(document:Document, stream:Stream) : DownloadById
+}
+DocumentDTOs +-- Inner
+DocumentDTOs +-- Request
+DocumentDTOs +-- Response
+Inner +-- Create
+Create --> "Stream" Stream
+Inner +-- Delete
+Inner +-- ReadById
+Inner +-- DownloadById
+Inner +-- Read
+Inner +-- Update
+Request +-- Create
+Request +-- Update
+Response +-- Create
+Create --> "DateOfCreate" DateTimeOffset
+Response +-- Read
+Read --> "DateOfCreate" DateTimeOffset
+Response +-- ReadById
+ReadById --> "DateOfCreate" DateTimeOffset
+Response +-- DownloadById
+DownloadById --> "Stream" Stream
+@enduml

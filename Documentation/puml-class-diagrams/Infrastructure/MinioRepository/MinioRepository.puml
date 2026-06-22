@@ -1,0 +1,9 @@
+@startuml
+class MinioRepository <<sealed>> {
+    + <<async>> DeleteAsync(path:string, bucket:string) : Task
+    + <<async>> DownloadAsync(path:string, bucket:string) : Task<Stream>
+    + <<async>> UploadAsync(fileStream:Stream, path:string, bucket:string) : Task
+}
+IS3Repository <|-- MinioRepository
+MinioRepository o-> "_minioClient" IMinioClient
+@enduml

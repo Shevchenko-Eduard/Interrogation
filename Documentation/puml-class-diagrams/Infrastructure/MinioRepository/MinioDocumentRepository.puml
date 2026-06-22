@@ -1,0 +1,10 @@
+@startuml
+class MinioDocumentRepository <<sealed>> {
+    - <<readonly>> bucket : string = "documents"
+    + DeleteAsync(path:string) : Task
+    + DownloadAsync(path:string) : Task<Stream>
+    + UploadAsync(fileStream:Stream, path:string) : Task
+}
+IS3DocumentRepository <|-- MinioDocumentRepository
+MinioDocumentRepository o-> "_minioRepository" IS3Repository
+@enduml

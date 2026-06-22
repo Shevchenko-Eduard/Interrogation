@@ -1,0 +1,48 @@
+@startuml
+class FragmentDTOs <<static>> {
+}
+class Inner <<static>> {
+}
+class Request <<static>> {
+}
+class Response <<static>> {
+}
+class Create <<record>> {
+    + DocumentId : int <<get>> <<init>>
+    + MarkerName : string <<get>> <<init>>
+    + Value : string <<get>> <<init>>
+    + GetFragment() : Fragment
+}
+class Delete <<record>> {
+    + Id : int <<get>> <<init>>
+}
+class ReadById <<record>> {
+    + Id : int <<get>> <<init>>
+}
+class ReadByDocumentId <<record>> {
+    + DocumentId : int <<get>> <<init>>
+}
+class Create <<record>> {
+    + Id : int <<get>> <<init>>
+    + DocumentId : int <<get>> <<init>>
+    + MarkerName : string <<get>> <<init>>
+    + Value : string <<get>> <<init>>
+    + {static} FromFragment(fragment:Fragment) : Create
+}
+class Read <<record>> {
+    + Id : int <<get>> <<init>>
+    + DocumentId : int <<get>> <<init>>
+    + MarkerName : string <<get>> <<init>>
+    + Value : string <<get>> <<init>>
+    + {static} FromFragment(fragment:Fragment) : Read
+}
+FragmentDTOs +-- Inner
+FragmentDTOs +-- Request
+FragmentDTOs +-- Response
+Inner +-- Create
+Inner +-- Delete
+Inner +-- ReadById
+Inner +-- ReadByDocumentId
+Response +-- Create
+Response +-- Read
+@enduml

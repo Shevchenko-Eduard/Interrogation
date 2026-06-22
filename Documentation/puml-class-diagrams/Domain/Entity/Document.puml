@@ -1,0 +1,22 @@
+@startuml
+class Document <<sealed>> {
+    + Id : int <<get>> <<init>>
+    + EncryptionTypeId : int <<get>> <<init>>
+    + SecretId : int <<get>> <<init>>
+    + DocumentKey : string <<get>> <<init>>
+    + CreatorId : string <<get>> <<init>>
+    + Name : string <<get>> <<set>>
+    + Description : string? <<get>> <<set>>
+    + ContentType : string <<get>> <<init>>
+    + Extension : string <<get>> <<init>>
+    + EncryptionAlgorithm : string? <<get>> <<init>>
+    - Document()
+    + Document(encryptionTypeId:int, secretId:int, creatorId:string, name:string, description:string?, contentType:string, extension:string, encryptionAlgorithm:string?, documentKeyGenerator:IDocumentKeyManager, clock:IClock)
+}
+Document --> "DateOfCreate" DateTimeOffset
+Document --> "Secret" Secret
+Document --> "EncryptionType" EncryptionType
+Document --> "Fragments<Fragment>" "ICollection`1"
+Document --> "_documentKeyGenerator" IDocumentKeyManager
+Document --> "_clock" IClock
+@enduml

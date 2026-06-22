@@ -1,0 +1,10 @@
+@startuml
+class DeleteFragmentUseCase {
+    + <<async>> Execute(input:FragmentDTOs.Inner.Delete) : Task
+}
+class "IAction`1"<T> {
+}
+"IAction`1" "<FragmentDTOs.Inner.Delete>" <|-- DeleteFragmentUseCase
+DeleteFragmentUseCase o-> "_fragmentRepository" IFragmentRepository
+DeleteFragmentUseCase o-> "_unitOfWork" IUnitOfWork
+@enduml

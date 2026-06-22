@@ -1,0 +1,5 @@
+@startuml
+class AppInitService <<static>> {
+    + {static} AddAppInit(builder:WebApplicationBuilder) : WebApplicationBuilder
+}
+@enduml

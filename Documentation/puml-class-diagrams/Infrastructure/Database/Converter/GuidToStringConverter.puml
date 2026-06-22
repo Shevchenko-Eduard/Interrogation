@@ -1,0 +1,8 @@
+@startuml
+class GuidToStringConverter {
+    + GuidToStringConverter()
+}
+class "ValueConverter`2"<T1,T2> {
+}
+"ValueConverter`2" "<Guid,string>" <|-- GuidToStringConverter
+@enduml

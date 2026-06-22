@@ -1,0 +1,10 @@
+@startuml
+interface "IBaseStatusObjectRepository`1"<T> {
+    GetByNameAsync(name:string) : Task<T?>
+}
+class "IBaseEnumObjectAbstract`1"<T> {
+}
+class "StatusObjectAbstract`1"<T> {
+}
+"IBaseEnumObjectAbstract`1" "<T>" <|-- "IBaseStatusObjectRepository`1"
+@enduml

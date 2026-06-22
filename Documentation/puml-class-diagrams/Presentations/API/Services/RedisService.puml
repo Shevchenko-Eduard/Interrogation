@@ -1,0 +1,5 @@
+@startuml
+class RedisService <<static>> {
+    + {static} AddRedis(services:IServiceCollection, configuration:IConfiguration) : IServiceCollection
+}
+@enduml

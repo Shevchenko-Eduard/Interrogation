@@ -1,0 +1,11 @@
+@startuml
+class CurrentUserService <<sealed>> {
+    + Id : string? <<get>>
+    + IsAuthenticated : bool <<get>>
+    + Email : string? <<get>>
+    + Name : string? <<get>>
+}
+ICurrentUser <|-- CurrentUserService
+CurrentUserService o-> "_httpContextAccessor" IHttpContextAccessor
+CurrentUserService --> "User" ClaimsPrincipal
+@enduml

@@ -1,0 +1,5 @@
+@startuml
+interface "IBaseCreateRepository`1"<TValue> {
+    AddAsync(entity:TValue) : Task
+}
+@enduml

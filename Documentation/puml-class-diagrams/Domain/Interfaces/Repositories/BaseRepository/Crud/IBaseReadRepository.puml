@@ -1,0 +1,6 @@
+@startuml
+interface "IBaseReadRepository`2"<TValue,TValueId> {
+    GetByIdAsync(id:TValueId) : Task<TValue?>
+    GetAsync(expression:Expression<Func<TValue, bool>>) : Task<IEnumerable<TValue>>
+}
+@enduml

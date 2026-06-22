@@ -1,0 +1,10 @@
+@startuml
+class ProgramContext <<partial>> {
+}
+class "DbSet`1"<T> {
+}
+ProgramContext --> "Documents<Domain.Entity.Document>" "DbSet`1"
+ProgramContext --> "EncryptionTypes<Domain.Entity.EncryptionType>" "DbSet`1"
+ProgramContext --> "Fragments<Domain.Entity.Fragment>" "DbSet`1"
+ProgramContext --> "Secrets<Domain.Entity.Secret>" "DbSet`1"
+@enduml

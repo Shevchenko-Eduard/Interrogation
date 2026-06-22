@@ -1,0 +1,15 @@
+@startuml
+class EfUnitOfWork <<sealed>> {
+    - _currentTransaction : IDbContextTransaction?
+    - _disposed : bool
+    + EfUnitOfWork(context:ProgramContext)
+    + <<async>> BeginTransactionAsync(cancellationToken:CancellationToken) : Task
+    + <<async>> SaveChangesAsync(cancellationToken:CancellationToken) : Task<int>
+    + <<async>> CommitTransactionAsync(cancellationToken:CancellationToken) : Task
+    + <<async>> RollbackTransactionAsync(cancellationToken:CancellationToken) : Task
+    + Dispose() : void
+}
+IUnitOfWork <|-- EfUnitOfWork
+IDisposable <|-- EfUnitOfWork
+EfUnitOfWork --> "_context" ProgramContext
+@enduml

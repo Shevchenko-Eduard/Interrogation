@@ -1,0 +1,14 @@
+@startuml
+abstract class "StatusObjectAbstract`1"<T> {
+    + Name : string <<get>>
+    # StatusObjectAbstract(name:string)
+    # StatusObjectAbstract(id:int, name:string)
+    + {static} FromName(name:string) : StatusObjectAbstract<T>
+    + <<override>> Equals(obj:object?) : bool
+    + Equals(status:StatusObjectAbstract<T>) : bool
+    + <<override>> GetHashCode() : int
+}
+class "EnumObjectAbstract`1"<T> {
+}
+"EnumObjectAbstract`1" "<T>" <|-- "StatusObjectAbstract`1"
+@enduml

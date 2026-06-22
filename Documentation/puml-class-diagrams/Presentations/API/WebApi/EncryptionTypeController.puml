@@ -1,0 +1,8 @@
+@startuml
+class EncryptionTypeController <<sealed>> {
+    + <<async>> Read() : Task<IActionResult>
+    + <<async>> ReadById(id:int) : Task<IActionResult>
+}
+ControllerBase <|-- EncryptionTypeController
+EncryptionTypeController o-> "_encryptionTypeRepository" IEncryptionTypeRepository
+@enduml

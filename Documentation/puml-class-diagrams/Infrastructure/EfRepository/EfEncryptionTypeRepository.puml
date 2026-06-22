@@ -1,0 +1,9 @@
+@startuml
+class EfEncryptionTypeRepository <<sealed>> {
+    + <<async>> GetAllAsync() : Task<List<EncryptionType>>
+    + <<async>> GetAsync(expression:Expression<Func<EncryptionType, bool>>) : Task<IEnumerable<EncryptionType>>
+    <<async>> - GetByIdAsync(id:int) : Task<EncryptionType?>
+}
+IEncryptionTypeRepository <|-- EfEncryptionTypeRepository
+EfEncryptionTypeRepository o-> "_context" ProgramContext
+@enduml

@@ -1,0 +1,9 @@
+@startuml
+class MinIoSchema <<sealed>> {
+    + Endpoint : string <<get>>
+    + Username : string <<get>>
+    + Password : string <<get>>
+    + Https : bool <<get>>
+}
+MinIoSchema o-> "minioSettings" IConfigurationSection
+@enduml

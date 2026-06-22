@@ -1,0 +1,9 @@
+@startuml
+class ReadByIdFragmentUseCase {
+    + <<async>> Ask(input:FragmentDTOs.Inner.ReadById) : Task<FragmentDTOs.Response.Read>
+}
+class "IQuestion`2"<T1,T2> {
+}
+"IQuestion`2" "<FragmentDTOs.Response.Read,FragmentDTOs.Inner.ReadById>" <|-- ReadByIdFragmentUseCase
+ReadByIdFragmentUseCase o-> "_fragmentRepository" IFragmentRepository
+@enduml

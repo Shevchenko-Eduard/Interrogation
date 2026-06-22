@@ -1,0 +1,11 @@
+@startuml
+class FragmentController <<sealed>> {
+    + <<async>> Create(create:FragmentDTOs.Inner.Create) : Task<IActionResult>
+    + <<async>> Delete(id:int) : Task<IActionResult>
+    + <<async>> ReadById(id:int) : Task<IActionResult>
+    + <<async>> ReadByDocumentId(id:int) : Task<IActionResult>
+}
+ControllerBase <|-- FragmentController
+FragmentController o-> "_fragmentRepository" IFragmentRepository
+FragmentController o-> "_unitOfWork" IUnitOfWork
+@enduml

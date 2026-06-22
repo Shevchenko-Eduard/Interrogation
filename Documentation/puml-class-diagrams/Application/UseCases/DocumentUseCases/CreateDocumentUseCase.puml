@@ -1,0 +1,13 @@
+@startuml
+class CreateDocumentUseCase {
+    + <<async>> Execute(input:DocumentDTOs.Inner.Create) : Task<DocumentDTOs.Response.Create>
+}
+class "IAction`2"<T1,T2> {
+}
+"IAction`2" "<DocumentDTOs.Inner.Create,DocumentDTOs.Response.Create>" <|-- CreateDocumentUseCase
+CreateDocumentUseCase o-> "_documentRepository" IDocumentRepository
+CreateDocumentUseCase o-> "_documentS3Repository" IS3DocumentRepository
+CreateDocumentUseCase o-> "_unitOfWork" IUnitOfWork
+CreateDocumentUseCase o-> "_clock" IClock
+CreateDocumentUseCase o-> "_documentKeyManager" IDocumentKeyManager
+@enduml

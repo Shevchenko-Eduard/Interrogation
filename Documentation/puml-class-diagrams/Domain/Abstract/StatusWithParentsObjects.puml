@@ -1,0 +1,15 @@
+@startuml
+abstract class "StatusWithParentsObjectsAbstract`1"<T> {
+    # StatusWithParentsObjectsAbstract(name:string)
+    # StatusWithParentsObjectsAbstract(id:byte, name:string)
+    # StatusWithParentsObjectsAbstract(name:string, parents:IEnumerable<T>)
+    # StatusWithParentsObjectsAbstract(id:byte, name:string, parents:IEnumerable<T>)
+    + <<override>> Equals(obj:object?) : bool
+    + Equals(statusWithParents:StatusWithParentsObjectsAbstract<T>) : bool
+    + <<override>> GetHashCode() : int
+}
+class "StatusObjectAbstract`1"<T> {
+}
+"StatusObjectAbstract`1" "<T>" <|-- "StatusWithParentsObjectsAbstract`1"
+"StatusWithParentsObjectsAbstract`1" --> "Parents<T>" "IEnumerable`1"
+@enduml

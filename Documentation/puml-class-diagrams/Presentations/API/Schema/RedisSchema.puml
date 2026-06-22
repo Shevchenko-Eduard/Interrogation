@@ -1,0 +1,8 @@
+@startuml
+class RedisSchema <<sealed>> {
+    + Endpoint : string <<get>>
+    + InstanceName : string? <<get>>
+    + Password : string? <<get>>
+}
+RedisSchema o-> "redisSettings" IConfigurationSection
+@enduml

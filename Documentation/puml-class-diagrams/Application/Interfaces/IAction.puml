@@ -1,0 +1,8 @@
+@startuml
+interface "IAction`1"<TInput> {
+    Execute(input:TInput) : Task
+}
+interface "IAction`2"<TInput,TOutput> {
+    Execute(input:TInput) : Task<TOutput>
+}
+@enduml

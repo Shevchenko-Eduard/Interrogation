@@ -1,0 +1,8 @@
+@startuml
+interface IUnitOfWork {
+    BeginTransactionAsync(cancellationToken:CancellationToken) : Task
+    SaveChangesAsync(cancellationToken:CancellationToken) : Task<int>
+    CommitTransactionAsync(cancellationToken:CancellationToken) : Task
+    RollbackTransactionAsync(cancellationToken:CancellationToken) : Task
+}
+@enduml

@@ -1,0 +1,6 @@
+@startuml
+class SwaggerService <<static>> {
+    + {static} AddSwagger(services:IServiceCollection, configuration:IConfiguration) : IServiceCollection
+    + {static} UseSwaggerMap(app:WebApplication, configuration:IConfiguration) : WebApplication
+}
+@enduml

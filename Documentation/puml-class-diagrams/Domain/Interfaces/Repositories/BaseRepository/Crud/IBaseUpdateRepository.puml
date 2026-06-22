@@ -1,0 +1,5 @@
+@startuml
+interface "IBaseUpdateRepository`1"<TValue> {
+    UpdateAsync(entity:TValue) : Task
+}
+@enduml

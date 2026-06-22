@@ -1,0 +1,11 @@
+@startuml
+class DeleteDocumentUseCase {
+    + <<async>> Execute(input:DocumentDTOs.Inner.Delete) : Task
+}
+class "IAction`1"<T> {
+}
+"IAction`1" "<DocumentDTOs.Inner.Delete>" <|-- DeleteDocumentUseCase
+DeleteDocumentUseCase o-> "_documentRepository" IDocumentRepository
+DeleteDocumentUseCase o-> "_documentS3Repository" IS3DocumentRepository
+DeleteDocumentUseCase o-> "_unitOfWork" IUnitOfWork
+@enduml

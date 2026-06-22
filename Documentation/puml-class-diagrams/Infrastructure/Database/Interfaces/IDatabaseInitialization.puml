@@ -1,0 +1,5 @@
+@startuml
+interface IDatabaseInitialization {
+    InitializeAsync(cancellationToken:CancellationToken) : Task
+}
+@enduml

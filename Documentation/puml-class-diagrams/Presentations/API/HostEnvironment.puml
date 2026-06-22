@@ -1,0 +1,9 @@
+@startuml
+class HostEnvironment <<sealed>> {
+    + CurrentEnvironment : string <<get>>
+    + IsDevelopment() : bool
+    + IsProduction() : bool
+    + IsStaging() : bool
+}
+HostEnvironment o-> "_hostEnvironment" IHostEnvironment
+@enduml

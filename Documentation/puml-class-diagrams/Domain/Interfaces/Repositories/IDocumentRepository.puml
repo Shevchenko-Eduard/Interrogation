@@ -1,0 +1,8 @@
+@startuml
+interface IDocumentRepository {
+    GetDocumentKeyByIdAsync(id:int) : Task<string?>
+}
+class "IBaseCrudRepository`2"<T1,T2> {
+}
+"IBaseCrudRepository`2" "<Document,int>" <|-- IDocumentRepository
+@enduml

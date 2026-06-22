@@ -1,0 +1,5 @@
+@startuml
+class DependencyInjectionConfig <<static>> <<partial>> {
+    + {static} AddRepositories(services:IServiceCollection) : IServiceCollection
+}
+@enduml

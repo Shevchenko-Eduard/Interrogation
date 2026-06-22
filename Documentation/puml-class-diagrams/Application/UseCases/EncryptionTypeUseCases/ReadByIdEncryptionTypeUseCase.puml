@@ -1,0 +1,9 @@
+@startuml
+class ReadByIdEncryptionTypeUseCase {
+    + <<async>> Ask(input:EncryptionTypeDTOs.Inner.ReadById) : Task<EncryptionTypeDTOs.Response.Read>
+}
+class "IQuestion`2"<T1,T2> {
+}
+"IQuestion`2" "<EncryptionTypeDTOs.Response.Read,EncryptionTypeDTOs.Inner.ReadById>" <|-- ReadByIdEncryptionTypeUseCase
+ReadByIdEncryptionTypeUseCase o-> "_encryptionTypeRepository" IEncryptionTypeRepository
+@enduml

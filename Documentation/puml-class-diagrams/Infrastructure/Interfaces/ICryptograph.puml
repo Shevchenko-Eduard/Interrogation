@@ -1,0 +1,6 @@
+@startuml
+interface ICryptograph {
+    Encrypt(value:string) : string
+    Decrypt(value:string) : string
+}
+@enduml

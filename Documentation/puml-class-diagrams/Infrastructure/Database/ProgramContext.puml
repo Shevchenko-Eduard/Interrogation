@@ -1,0 +1,8 @@
+@startuml
+class ProgramContext <<partial>> {
+    + ProgramContext(options:DbContextOptions<ProgramContext>)
+    # <<override>> OnConfiguring(optionsBuilder:DbContextOptionsBuilder) : void
+    # <<override>> OnModelCreating(modelBuilder:ModelBuilder) : void
+}
+DbContext <|-- ProgramContext
+@enduml

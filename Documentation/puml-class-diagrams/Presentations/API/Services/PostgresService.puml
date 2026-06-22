@@ -1,0 +1,6 @@
+@startuml
+class PostgresService <<static>> {
+    + {static} AddPostgres(services:IServiceCollection, configuration:IConfiguration) : IServiceCollection
+    - {static} GetConnectionString(postgresSchema:PostgresSchema) : string
+}
+@enduml

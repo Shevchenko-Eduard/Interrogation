@@ -1,0 +1,8 @@
+@startuml
+interface "IQuestion`1"<TOutput> {
+    Ask() : Task<TOutput>
+}
+interface "IQuestion`2"<TOutput,TInput> {
+    Ask(input:TInput) : Task<TOutput>
+}
+@enduml

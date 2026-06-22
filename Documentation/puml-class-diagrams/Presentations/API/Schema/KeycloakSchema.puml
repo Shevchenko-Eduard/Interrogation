@@ -1,0 +1,18 @@
+@startuml
+class KeycloakSchema <<sealed>> {
+    + AuthServerUrl : string <<get>>
+    + Realm : string <<get>>
+    + Resource : string <<get>>
+    + Secret : string <<get>>
+    + SslRequired : string <<get>>
+    + VerifyTokenAudience : bool <<get>>
+    + MetadataAddress : string <<get>>
+    + <<const>> RoleClaimType : string = "roles"
+    + <<async>> AuthorizationEndpoint() : Task<string>
+    + <<async>> TokenEndpoint() : Task<string>
+    + <<async>> IssuerEndpoint() : Task<string>
+    - _oidcConfig : Dictionary<string, object>?
+    + <<async>> OidcConfigurationAsync() : Task<Dictionary<string, object>>
+}
+KeycloakSchema o-> "_kcSettings" IConfigurationSection
+@enduml

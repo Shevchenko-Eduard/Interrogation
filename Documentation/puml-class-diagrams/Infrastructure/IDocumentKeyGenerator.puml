@@ -1,0 +1,6 @@
+@startuml
+class DocumentKeyManager {
+    + Create() : string
+}
+IDocumentKeyManager <|-- DocumentKeyManager
+@enduml

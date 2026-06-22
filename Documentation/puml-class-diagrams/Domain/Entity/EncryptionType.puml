@@ -1,0 +1,12 @@
+@startuml
+class EncryptionType <<sealed>> {
+    - EncryptionType(name:string)
+}
+class "StatusObjectAbstract`1"<T> {
+}
+"StatusObjectAbstract`1" "<EncryptionType>" <|-- EncryptionType
+EncryptionType --> "Documents<Document>" "ICollection`1"
+EncryptionType o-> "Full" EncryptionType
+EncryptionType o-> "Part" EncryptionType
+EncryptionType o-> "None" EncryptionType
+@enduml

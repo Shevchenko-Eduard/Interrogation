@@ -1,0 +1,11 @@
+@startuml
+class Fragment <<sealed>> {
+    + Id : int <<get>> <<init>>
+    + DocumentId : int <<get>> <<init>>
+    + MarkerName : string <<get>> <<init>>
+    + Value : string <<get>> <<init>>
+    - Fragment()
+    + Fragment(documentId:int, markerName:string, value:string)
+}
+Fragment --> "Document" Document
+@enduml

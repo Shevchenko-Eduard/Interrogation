@@ -1,0 +1,8 @@
+@startuml
+interface ICurrentUser {
+    Id : string? <<get>>
+    IsAuthenticated : bool <<get>>
+    + Email : string? <<get>>
+    + Name : string? <<get>>
+}
+@enduml

@@ -1,0 +1,7 @@
+@startuml
+class Clock <<sealed>> {
+    + {static} Now() : DateTimeOffset
+}
+IClock <|-- Clock
+Clock --> "Now" DateTimeOffset
+@enduml

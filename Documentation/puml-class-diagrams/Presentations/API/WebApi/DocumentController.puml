@@ -1,0 +1,17 @@
+@startuml
+class DocumentController <<sealed>> {
+    + <<async>> Create(file:IFormFile, request:DocumentDTOs.Request.Create) : Task<IActionResult>
+    + <<async>> Update(id:int, request:DocumentDTOs.Request.Update) : Task<IActionResult>
+    + <<async>> Delete(id:int) : Task<IActionResult>
+    + <<async>> Read() : Task<IActionResult>
+    + <<async>> ReadById(id:int) : Task<IActionResult>
+    + <<async>> DownloadById(id:int) : Task<IActionResult>
+}
+ControllerBase <|-- DocumentController
+DocumentController o-> "_documentRepository" IDocumentRepository
+DocumentController o-> "_s3DocumentRepository" IS3DocumentRepository
+DocumentController o-> "_clock" IClock
+DocumentController o-> "_documentKeyManager" IDocumentKeyManager
+DocumentController o-> "_unitOfWork" IUnitOfWork
+DocumentController o-> "_currentUser" ICurrentUser
+@enduml

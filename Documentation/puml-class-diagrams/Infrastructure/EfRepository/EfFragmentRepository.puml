@@ -1,0 +1,10 @@
+@startuml
+class EfFragmentRepository <<sealed>> {
+    + <<async>> AddAsync(entity:Fragment) : Task
+    + <<async>> DeleteAsync(id:int) : Task
+    + <<async>> GetAsync(expression:Expression<Func<Fragment, bool>>) : Task<IEnumerable<Fragment>>
+    + <<async>> GetByIdAsync(id:int) : Task<Fragment?>
+}
+IFragmentRepository <|-- EfFragmentRepository
+EfFragmentRepository o-> "_context" ProgramContext
+@enduml

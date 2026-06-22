@@ -1,0 +1,9 @@
+@startuml
+class ReadByIdDocumentUseCase {
+    + <<async>> Ask(input:DocumentDTOs.Inner.ReadById) : Task<DocumentDTOs.Response.ReadById>
+}
+class "IQuestion`2"<T1,T2> {
+}
+"IQuestion`2" "<DocumentDTOs.Response.ReadById,DocumentDTOs.Inner.ReadById>" <|-- ReadByIdDocumentUseCase
+ReadByIdDocumentUseCase o-> "_documentRepository" IDocumentRepository
+@enduml

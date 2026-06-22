@@ -1,0 +1,26 @@
+@startuml
+class EncryptionTypeDTOs <<static>> {
+}
+class Inner <<static>> {
+}
+class Request <<static>> {
+}
+class Response <<static>> {
+}
+class ReadAll <<record>> {
+}
+class ReadById <<record>> {
+    + Id : int <<get>> <<init>>
+}
+class Read <<record>> {
+    + Id : int <<get>> <<init>>
+    + Name : string <<get>> <<init>>
+    + {static} FromEncryptionType(encryptionType:EncryptionType) : Read
+}
+EncryptionTypeDTOs +-- Inner
+EncryptionTypeDTOs +-- Request
+EncryptionTypeDTOs +-- Response
+Inner +-- ReadAll
+Inner +-- ReadById
+Response +-- Read
+@enduml

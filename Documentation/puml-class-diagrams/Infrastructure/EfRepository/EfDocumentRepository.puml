@@ -1,0 +1,12 @@
+@startuml
+class EfDocumentRepository <<sealed>> {
+    + <<async>> AddAsync(entity:Document) : Task
+    + <<async>> DeleteAsync(id:int) : Task
+    + <<async>> GetAsync(expression:Expression<Func<Document, bool>>) : Task<IEnumerable<Document>>
+    + <<async>> GetDocumentKeyByIdAsync(id:int) : Task<string?>
+    + <<async>> UpdateAsync(entity:Document) : Task
+    + <<async>> GetByIdAsync(id:int) : Task<Document?>
+}
+IDocumentRepository <|-- EfDocumentRepository
+EfDocumentRepository o-> "_context" ProgramContext
+@enduml

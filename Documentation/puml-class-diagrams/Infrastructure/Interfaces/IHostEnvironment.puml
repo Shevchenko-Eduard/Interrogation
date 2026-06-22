@@ -1,0 +1,8 @@
+@startuml
+interface IHostEnvironment {
+    IsProduction() : bool
+    IsDevelopment() : bool
+    IsStaging() : bool
+    CurrentEnvironment : string <<get>>
+}
+@enduml
