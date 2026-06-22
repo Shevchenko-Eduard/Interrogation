@@ -183,7 +183,6 @@ public partial class MainWindow : Window
     {
         if (ViewModel is not null) await ViewModel.UploadSelectedDocumentAsync();
     }
-
     private async void UploadButton_OnClick(object? sender, RoutedEventArgs e)
     {
         if (ViewModel is null)

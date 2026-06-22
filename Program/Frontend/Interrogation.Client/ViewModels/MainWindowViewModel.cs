@@ -497,6 +497,7 @@ public sealed class MainWindowViewModel : ViewModelBase
             Preview = preview.ReplaceLineEndings(" "),
             EncryptedPayload = await _cryptographyService.EncryptAsync(SelectedFragmentText, password),
             PlainText = SelectedFragmentText,
+
             Length = SelectedFragmentText.Length,
             CreatedAt = DateTimeOffset.Now
         });
@@ -755,7 +756,6 @@ public sealed class MainWindowViewModel : ViewModelBase
         }
         finally { IsBusy = false; }
     }
-
     private async Task ValidateFragmentPasswordsAsync(string documentName, string password)
     {
         foreach (var fragment in Fragments.Where(item => item.DocumentName == documentName))

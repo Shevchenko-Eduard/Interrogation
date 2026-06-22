@@ -131,6 +131,7 @@
             <Button Content="Обновить список" Click="RefreshDocumentsButton_OnClick" HorizontalAlignment="Stretch" />
             <ComboBox ItemsSource="{Binding ServerModes}" SelectedItem="{Binding SelectedServerMode}" />
             <Button Content="Отправить на сервер" Click="UploadToServerButton_OnClick" Classes="primary" HorizontalAlignment="Stretch" IsEnabled="{Binding HasSelectedDocument}" />
+
             <Button Content="Зашифровать весь документ" Click="EncryptFullButton_OnClick" Classes="primary" HorizontalAlignment="Stretch" IsEnabled="{Binding CanEncrypt}" />
             <Button Content="Экспорт .enc" Click="ExportButton_OnClick" HorizontalAlignment="Stretch" IsEnabled="{Binding CanEncrypt}" />
             <Grid ColumnDefinitions="*,*" ColumnSpacing="8">

@@ -1,4 +1,3 @@
-using System.Data;
 using Domain.Entity;
 using Domain.Interfaces;
 
@@ -10,7 +9,7 @@ public static class DocumentDTOs
     {
         public record Create(
             int EncryptionTypeId,
-            int SecretId,
+            int? SecretId,
             string CreatorId,
             string Name,
             string? Description,
@@ -67,7 +66,7 @@ public static class DocumentDTOs
     {
         public record Create(
             int EncryptionTypeId,
-            int SecretId,
+            int? SecretId,
             string Name,
             string? Description,
             string? EncryptionAlgorithm
@@ -82,7 +81,7 @@ public static class DocumentDTOs
         public record Create(
             int Id,
             int EncryptionTypeId,
-            int SecretId,
+            int? SecretId,
             string CreatorId,
             string Name,
             string? Description,
@@ -133,7 +132,7 @@ public static class DocumentDTOs
         public record ReadById(
             int Id,
             int EncryptionTypeId,
-            int SecretId,
+            int? SecretId,
             string CreatorId,
             string Name,
             string? Description,

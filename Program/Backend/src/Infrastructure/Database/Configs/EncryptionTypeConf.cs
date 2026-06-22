@@ -34,7 +34,7 @@ public class EncryptionTypeConf : IEntityTypeConfiguration<EncryptionType>
 
         #region index
         builder.HasIndex(_ => _.Name)
-            .HasDatabaseName("uq__encryption_types__name")
+            .HasDatabaseName("uq_encryption_types_name")
             .IsUnique();
         #endregion
 
