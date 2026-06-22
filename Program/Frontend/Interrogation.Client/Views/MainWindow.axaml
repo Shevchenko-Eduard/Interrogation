@@ -1,0 +1,193 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:models="clr-namespace:Interrogation.Client.Models"
+        x:Class="Interrogation.Client.Views.MainWindow"
+        x:CompileBindings="False"
+        Width="1240"
+        Height="790"
+        MinWidth="1060"
+        MinHeight="680"
+        Title="Interrogation Client">
+  <Window.Styles>
+    <Style Selector="Button">
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="MinHeight" Value="36" />
+      <Setter Property="Padding" Value="13,7" />
+      <Setter Property="FontSize" Value="13" />
+    </Style>
+    <Style Selector="Button.primary">
+      <Setter Property="Background" Value="#244C73" />
+      <Setter Property="Foreground" Value="#FFFFFF" />
+    </Style>
+    <Style Selector="TextBlock.caption">
+      <Setter Property="Foreground" Value="#667085" />
+      <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style Selector="TextBlock.title">
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="FontSize" Value="16" />
+    </Style>
+    <Style Selector="Border.panel">
+      <Setter Property="Background" Value="#FFFFFF" />
+      <Setter Property="BorderBrush" Value="#D8DEE8" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="8" />
+    </Style>
+  </Window.Styles>
+
+  <Grid RowDefinitions="Auto,*" Background="#EFF3F7">
+    <Border Grid.Row="0" Background="#1F2933" BorderBrush="#111827" BorderThickness="0,0,0,1">
+      <Grid ColumnDefinitions="*,Auto" Margin="22,14">
+        <StackPanel>
+          <TextBlock Text="Защита протоколов следственных действий" Foreground="#FFFFFF" FontSize="22" FontWeight="SemiBold" />
+          <TextBlock Text="Работа с документами, фрагментами и самодостаточным контейнером .enc.json" Foreground="#C9D4E2" FontSize="12" Margin="0,4,0,0" />
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+          <StackPanel VerticalAlignment="Center">
+            <TextBlock Text="{Binding CurrentUserName}" Foreground="#FFFFFF" FontWeight="SemiBold" HorizontalAlignment="Right" />
+            <TextBlock Text="{Binding CurrentRoleText}" Foreground="#C9D4E2" FontSize="12" HorizontalAlignment="Right" />
+          </StackPanel>
+          <Button Content="Выйти" Click="LogoutButton_OnClick" />
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <Grid Grid.Row="1" ColumnDefinitions="310,*,320" Margin="16" ColumnSpacing="12">
+      <Border Classes="panel">
+        <Grid RowDefinitions="Auto,*,Auto" Margin="14">
+          <StackPanel Spacing="3">
+            <TextBlock Text="Документы" Classes="title" />
+            <TextBlock Text="Локальный список для проверки интерфейса" Classes="caption" />
+          </StackPanel>
+
+          <ListBox Grid.Row="1"
+                   Margin="0,14,0,14"
+                   ItemsSource="{Binding Documents}"
+                   SelectedItem="{Binding SelectedDocument}"
+                   SelectionChanged="DocumentList_OnSelectionChanged">
+            <ListBox.ItemTemplate>
+              <DataTemplate DataType="models:DocumentItem">
+                <Border Padding="10" Margin="0,0,0,8" BorderBrush="#E2E7EF" BorderThickness="1" CornerRadius="6">
+                  <Grid RowDefinitions="Auto,Auto,Auto">
+                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                    <TextBlock Grid.Row="1" Text="{Binding Summary}" Classes="caption" Margin="0,4,0,0" />
+                    <TextBlock Grid.Row="2" Text="{Binding Status}" Foreground="#1E6091" FontSize="12" Margin="0,6,0,0" />
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+
+          <Button Grid.Row="2" Content="Открыть документ" Click="UploadButton_OnClick" Classes="primary" HorizontalAlignment="Stretch" />
+        </Grid>
+      </Border>
+
+      <Border Grid.Column="1" Classes="panel">
+        <Grid RowDefinitions="Auto,*,Auto" Margin="16">
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel>
+              <TextBlock Text="{Binding SelectedDocument.Name, FallbackValue=Документ не выбран}" Classes="title" />
+              <TextBlock Text="{Binding DocumentInfo}" Classes="caption" Margin="0,6,0,0" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top">
+              <Button Content="Сохранить" Click="SaveDraftButton_OnClick" />
+              <Button Content="Расшифровать" Click="DecryptButton_OnClick" IsEnabled="{Binding CanDecrypt}" />
+            </StackPanel>
+          </Grid>
+
+          <Border Grid.Row="1" Margin="0,14,0,12" BorderBrush="#D8DEE8" BorderThickness="1" CornerRadius="6" Background="#FBFCFE">
+            <TextBox x:Name="DocumentEditor"
+                     Text="{Binding DocumentText}"
+                     PointerReleased="DocumentEditor_OnPointerReleased"
+                     KeyUp="DocumentEditor_OnKeyUp"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     FontFamily="Consolas"
+                     FontSize="14"
+                     BorderThickness="0"
+                     Background="Transparent"
+                     Margin="10" />
+          </Border>
+
+          <Grid Grid.Row="2" RowDefinitions="Auto,Auto" RowSpacing="8">
+            <TextBox Text="{Binding SelectedFragmentText}"
+                     PlaceholderText="Выделите текст в редакторе и нажмите «Взять выделение»"
+                     IsReadOnly="True"
+                     MinHeight="38" />
+            <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+              <TextBlock Text="Будет обработан только выбранный участок текста" Classes="caption" VerticalAlignment="Center" />
+              <Button Grid.Column="1" Content="Взять выделение" Click="TakeSelectionButton_OnClick" IsEnabled="{Binding HasSelectedDocument}" />
+              <Button Grid.Column="2" Content="Зашифровать фрагмент" Click="EncryptFragmentButton_OnClick" Classes="primary" IsEnabled="{Binding CanEncrypt}" />
+            </Grid>
+          </Grid>
+        </Grid>
+      </Border>
+
+      <Grid Grid.Column="2" RowDefinitions="Auto,*,Auto" RowSpacing="12">
+        <Border Classes="panel">
+          <StackPanel Margin="14" Spacing="10">
+            <TextBlock Text="Операции" Classes="title" />
+            <TextBlock Text="{Binding CryptoEngineText}" Classes="caption" TextWrapping="Wrap" />
+            <Button Content="Обновить список" Click="RefreshDocumentsButton_OnClick" HorizontalAlignment="Stretch" />
+            <ComboBox ItemsSource="{Binding ServerModes}" SelectedItem="{Binding SelectedServerMode}" />
+            <Button Content="Отправить на сервер" Click="UploadToServerButton_OnClick" Classes="primary" HorizontalAlignment="Stretch" IsEnabled="{Binding HasSelectedDocument}" />
+            <Button Content="Зашифровать весь документ" Click="EncryptFullButton_OnClick" Classes="primary" HorizontalAlignment="Stretch" IsEnabled="{Binding CanEncrypt}" />
+            <Button Content="Экспорт .enc" Click="ExportButton_OnClick" HorizontalAlignment="Stretch" IsEnabled="{Binding CanEncrypt}" />
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+              <Button Content="DOCX" Click="ExportDocxButton_OnClick" HorizontalAlignment="Stretch" IsEnabled="{Binding HasSelectedDocument}" />
+              <Button Grid.Column="1" Content="ODT" Click="ExportOdtButton_OnClick" HorizontalAlignment="Stretch" IsEnabled="{Binding HasSelectedDocument}" />
+            </Grid>
+          </StackPanel>
+        </Border>
+
+        <Border Grid.Row="1" Classes="panel">
+          <TabControl Margin="8">
+            <TabItem Header="Фрагменты">
+              <ListBox Margin="6,10,6,6" ItemsSource="{Binding Fragments}">
+                <ListBox.ItemTemplate>
+                  <DataTemplate DataType="models:FragmentRecord">
+                    <Border Padding="10" Margin="0,0,0,8" BorderBrush="#E6EAF0" BorderThickness="1" CornerRadius="6">
+                      <StackPanel Spacing="4">
+                        <TextBlock Text="{Binding Marker}" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding Details}" Classes="caption" />
+                        <TextBlock Text="{Binding Preview}" TextWrapping="Wrap" FontSize="12" />
+                      </StackPanel>
+                    </Border>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+            </TabItem>
+            <TabItem Header="Действия">
+              <Grid RowDefinitions="Auto,*" Margin="6,10,6,6" RowSpacing="8">
+                <Grid ColumnDefinitions="*,110" ColumnSpacing="8">
+                  <TextBox Text="{Binding AuditSearchText}" PlaceholderText="Поиск" />
+                  <ComboBox Grid.Column="1" ItemsSource="{Binding AuditResultFilters}" SelectedItem="{Binding AuditResultFilter}" />
+                </Grid>
+                <ListBox Grid.Row="1" ItemsSource="{Binding AuditLog}">
+                <ListBox.ItemTemplate>
+                  <DataTemplate DataType="models:AuditRecord">
+                    <Border Padding="10" Margin="0,0,0,8" BorderBrush="#E6EAF0" BorderThickness="1" CornerRadius="6">
+                      <StackPanel Spacing="4">
+                        <TextBlock Text="{Binding Header}" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding Details}" Classes="caption" TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding Result}" FontSize="12" TextWrapping="Wrap" />
+                      </StackPanel>
+                    </Border>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+                </ListBox>
+              </Grid>
+            </TabItem>
+          </TabControl>
+        </Border>
+
+        <Border Grid.Row="2" Background="#FFF8E6" BorderBrush="#E8D7A8" BorderThickness="1" CornerRadius="8" Padding="12">
+          <StackPanel Spacing="6">
+            <TextBlock Text="Статус" FontWeight="SemiBold" />
+            <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap" FontSize="13" />
+          </StackPanel>
+        </Border>
+      </Grid>
+    </Grid>
+  </Grid>
+</Window>
