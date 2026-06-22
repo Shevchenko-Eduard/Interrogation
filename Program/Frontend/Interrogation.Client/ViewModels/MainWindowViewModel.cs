@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Text.Json;
+using System.Text;
 using Interrogation.Client.Models;
 using Interrogation.Client.Services;
 
@@ -21,9 +22,11 @@ public sealed class MainWindowViewModel : ViewModelBase
     private UserRole _currentRole = UserRole.Employee;
     private int _nextDocumentId = 100;
     private bool _isBusy;
+    private CancellationTokenSource? _documentLoadCancellation;
     private readonly List<AuditRecord> _auditHistory;
     private string _auditSearchText = string.Empty;
     private string _auditResultFilter = "Все";
+    private string _selectedServerMode = "Без шифрования (None)";
 
     public MainWindowViewModel(
         IInterrogationApiClient apiClient,
@@ -90,16 +93,43 @@ public sealed class MainWindowViewModel : ViewModelBase
         {
             return;
         }
+        _documentLoadCancellation?.Cancel();
+        _documentLoadCancellation?.Dispose();
+        _documentLoadCancellation = new CancellationTokenSource();
+        var cancellationToken = _documentLoadCancellation.Token;
         IsBusy = true;
         StatusMessage = $"Скачивание документа: {document.Name}";
         try
         {
+            var details = await _apiClient.GetDocumentAsync(document.Id, cancellationToken);
             var downloaded = await _apiClient.DownloadDocumentAsync(
                 document.Id,
                 document.Name,
-                document.RemoteExtension ?? string.Empty);
-            using var stream = new MemoryStream(downloaded.Content);
-            DocumentText = await _documentContentReader.ReadAsync(downloaded.FileName, stream);
+                document.RemoteExtension ?? string.Empty,
+                cancellationToken);
+            if (details.EncryptionTypeId == 1)
+            {
+                var secret = await _apiClient.GetSecretAsync(details.SecretId, cancellationToken);
+                using var container = JsonDocument.Parse(downloaded.Content);
+                var payload = container.RootElement.GetProperty("encryptedPayload").GetString()
+                    ?? throw new InvalidDataException("В контейнере отсутствует шифротекст");
+                DocumentText = await _cryptographyService.DecryptAsync(payload, secret.Value);
+            }
+            else
+            {
+                using var stream = new MemoryStream(downloaded.Content);
+                DocumentText = await Task.Run(() => _documentContentReader.ReadAsync(downloaded.FileName, stream), cancellationToken);
+                if (details.EncryptionTypeId == 2)
+                {
+                    var secret = await _apiClient.GetSecretAsync(details.SecretId, cancellationToken);
+                    var fragments = await _apiClient.GetFragmentsAsync(document.Id, cancellationToken);
+                    foreach (var fragment in fragments)
+                    {
+                        var plainText = await _cryptographyService.DecryptAsync(fragment.Value, secret.Value);
+                        DocumentText = DocumentText.Replace(fragment.MarkerName, plainText, StringComparison.Ordinal);
+                    }
+                }
+            }
             document.Content = DocumentText;
             var sourceFormat = Path.GetExtension(downloaded.FileName).TrimStart('.').ToLowerInvariant();
             if (sourceFormat is "docx" or "odt")
@@ -111,7 +141,8 @@ public sealed class MainWindowViewModel : ViewModelBase
             StatusMessage = $"Документ загружен: {downloaded.FileName}";
             RecordAudit("Скачивание документа", "Успешно", document.Name);
         }
-        catch (Exception exception) when (exception is HttpRequestException or IOException or InvalidDataException)
+        catch (OperationCanceledException) { }
+        catch (Exception exception) when (exception is HttpRequestException or IOException or InvalidDataException or InvalidOperationException or JsonException)
         {
             StatusMessage = $"Не удалось скачать документ: {exception.Message}";
             RecordAudit("Скачивание документа", $"Ошибка: {exception.Message}", document.Name);
@@ -127,6 +158,13 @@ public sealed class MainWindowViewModel : ViewModelBase
     public ObservableCollection<FragmentRecord> Fragments { get; }
 
     public ObservableCollection<AuditRecord> AuditLog { get; }
+
+    public IReadOnlyList<string> ServerModes { get; } = ["Без шифрования (None)", "Полное шифрование (Full)", "Частичное шифрование (Part)"];
+    public string SelectedServerMode
+    {
+        get => _selectedServerMode;
+        set => SetProperty(ref _selectedServerMode, value);
+    }
 
     public IReadOnlyList<string> AuditResultFilters { get; } = ["Все", "Успешно", "Ошибки"];
 
@@ -458,6 +496,8 @@ public sealed class MainWindowViewModel : ViewModelBase
             DocumentName = SelectedDocument.Name,
             Preview = preview.ReplaceLineEndings(" "),
             EncryptedPayload = await _cryptographyService.EncryptAsync(SelectedFragmentText, password),
+            PlainText = SelectedFragmentText,
+
             Length = SelectedFragmentText.Length,
             CreatedAt = DateTimeOffset.Now
         });
@@ -626,6 +666,96 @@ public sealed class MainWindowViewModel : ViewModelBase
         });
     }
 
+    public async Task UploadSelectedDocumentAsync()
+    {
+        var document = SelectedDocument;
+        if (document is null || document.IsRemote || IsBusy)
+        {
+            StatusMessage = document?.IsRemote == true ? "Документ уже находится на сервере" : "Сначала откройте локальный документ";
+            return;
+        }
+
+        var mode = SelectedServerMode.Contains("Full", StringComparison.Ordinal) ? 1
+            : SelectedServerMode.Contains("Part", StringComparison.Ordinal) ? 2 : 3;
+        var localFragments = Fragments.Where(item => item.DocumentName == document.Name).ToArray();
+        if (mode == 2 && localFragments.Length == 0)
+        {
+            StatusMessage = "Для режима Part зашифруйте хотя бы один фрагмент";
+            return;
+        }
+
+        IsBusy = true;
+        ApiSecret? secret = null;
+        var documentCreated = false;
+        var createdDocumentId = 0;
+        try
+        {
+            StatusMessage = "Подготовка документа к отправке...";
+            // Backend currently requires SecretId even for None.
+            secret = await _apiClient.CreateSecretAsync();
+            byte[] bytes;
+            string fileName;
+            string contentType;
+            if (mode == 1)
+            {
+                bytes = Encoding.UTF8.GetBytes(await BuildEncryptedContainerJsonAsync(secret.Value));
+                fileName = Path.GetFileNameWithoutExtension(document.Name) + ".enc";
+                contentType = "application/json";
+            }
+            else if (mode == 2)
+            {
+                bytes = Encoding.UTF8.GetBytes(DocumentText);
+                fileName = Path.GetFileNameWithoutExtension(document.Name) + ".txt";
+                contentType = "text/plain";
+            }
+            else
+            {
+                bytes = document.OriginalFileBytes ?? Encoding.UTF8.GetBytes(DocumentText);
+                fileName = document.Name;
+                contentType = document.SourceFormat == "docx"
+                    ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    : document.SourceFormat == "odt" ? "application/vnd.oasis.opendocument.text" : "text/plain";
+            }
+
+            if (bytes.Length > InterrogationApiClient.MaxUploadBytes)
+                throw new InvalidOperationException("Размер файла превышает серверный лимит 20 МБ");
+
+            var created = await _apiClient.UploadDocumentAsync(new DocumentUpload(
+                fileName, contentType, bytes, mode, secret.Id, Path.GetFileNameWithoutExtension(document.Name),
+                document.InvestigationActionType, mode == 3 ? null : "AES-256-GCM"));
+            documentCreated = true;
+            createdDocumentId = created.Id;
+
+            if (mode == 2)
+            {
+                foreach (var fragment in localFragments)
+                {
+                    if (fragment.PlainText is null)
+                        throw new InvalidOperationException("Импортированный фрагмент нельзя перенести без повторного выделения");
+                    var encrypted = await _cryptographyService.EncryptAsync(fragment.PlainText, secret.Value);
+                    await _apiClient.CreateFragmentAsync(created.Id, fragment.Marker, encrypted);
+                }
+            }
+
+            StatusMessage = $"Документ отправлен: {SelectedServerMode}";
+            RecordAudit("Отправка документа", "Успешно", document.Name);
+            await InitializeAsync();
+        }
+        catch (Exception exception) when (exception is HttpRequestException or InvalidOperationException)
+        {
+            if (documentCreated)
+            {
+                try { await _apiClient.DeleteDocumentAsync(createdDocumentId); } catch (HttpRequestException) { }
+            }
+            if (secret is not null)
+            {
+                try { await _apiClient.DeleteSecretAsync(secret.Id); } catch (HttpRequestException) { }
+            }
+            StatusMessage = $"Не удалось отправить документ: {exception.Message}";
+            RecordAudit("Отправка документа", $"Ошибка: {exception.Message}", document.Name);
+        }
+        finally { IsBusy = false; }
+    }
     private async Task ValidateFragmentPasswordsAsync(string documentName, string password)
     {
         foreach (var fragment in Fragments.Where(item => item.DocumentName == documentName))

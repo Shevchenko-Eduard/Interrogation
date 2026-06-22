@@ -13,6 +13,7 @@ public sealed class DocumentItem : INotifyPropertyChanged
     public required string Name { get; init; }
     public required string CaseNumber { get; init; }
     public required string Owner { get; init; }
+    public string InvestigationActionType { get; set; } = "Иное следственное действие";
 
     public required string Status
     {

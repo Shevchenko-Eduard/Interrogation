@@ -1,111 +1,52 @@
-using System.Diagnostics;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Interrogation.Client.Services;
 
+// Name retained to avoid breaking existing containers and dependency registration.
 public sealed class OpenSslCryptographyService : ICryptographyService
 {
     private const int Iterations = 200_000;
-    private static readonly Encoding Utf8WithoutBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
-    private readonly string? _executablePath;
+    private const int KeySize = 32;
 
-    public OpenSslCryptographyService()
+    public bool IsAvailable => AesGcm.IsSupported;
+    public string EngineDescription => "AES-256-GCM / System.Security.Cryptography";
+
+    public Task<string> EncryptAsync(string plainText, string password) => Task.Run(() =>
     {
-        _executablePath = FindModernOpenSsl();
-        EngineDescription = _executablePath is null
-            ? "OpenSSL 1.1.1+ не найден"
-            : ReadVersion(_executablePath);
-    }
+        var salt = RandomNumberGenerator.GetBytes(16);
+        var nonce = RandomNumberGenerator.GetBytes(AesGcm.NonceByteSizes.MaxSize);
+        var key = Rfc2898DeriveBytes.Pbkdf2(password, salt, Iterations, HashAlgorithmName.SHA256, KeySize);
+        var plaintext = Encoding.UTF8.GetBytes(plainText);
+        var ciphertext = new byte[plaintext.Length];
+        var tag = new byte[AesGcm.TagByteSizes.MaxSize];
+        using var aes = new AesGcm(key, tag.Length);
+        aes.Encrypt(nonce, plaintext, ciphertext, tag);
+        CryptographicOperations.ZeroMemory(key);
+        return $"aesgcm:v1:{Convert.ToBase64String(salt)}:{Convert.ToBase64String(nonce)}:{Convert.ToBase64String(tag)}:{Convert.ToBase64String(ciphertext)}";
+    });
 
-    public bool IsAvailable => _executablePath is not null;
-
-    public string EngineDescription { get; }
-
-    public Task<string> EncryptAsync(string plainText, string password) =>
-        ExecuteAsync(plainText, password, decrypt: false);
-
-    public Task<string> DecryptAsync(string encryptedText, string password) =>
-        ExecuteAsync(encryptedText, password, decrypt: true);
-
-    private async Task<string> ExecuteAsync(string input, string password, bool decrypt)
+    public Task<string> DecryptAsync(string encryptedText, string password) => Task.Run(() =>
     {
-        if (_executablePath is null)
-        {
-            throw new InvalidOperationException("Современный OpenSSL не найден");
-        }
-
-        var arguments = decrypt
-            ? $"enc -d -aes-256-cbc -pbkdf2 -iter {Iterations} -md sha256 -a -A -pass env:INTERROGATION_PASSWORD"
-            : $"enc -aes-256-cbc -salt -pbkdf2 -iter {Iterations} -md sha256 -a -A -pass env:INTERROGATION_PASSWORD";
-
-        var startInfo = new ProcessStartInfo(_executablePath, arguments)
-        {
-            RedirectStandardInput = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            StandardInputEncoding = Utf8WithoutBom,
-            StandardOutputEncoding = Utf8WithoutBom,
-            StandardErrorEncoding = Utf8WithoutBom,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
-        startInfo.Environment["INTERROGATION_PASSWORD"] = password;
-
-        using var process = Process.Start(startInfo)
-            ?? throw new InvalidOperationException("Не удалось запустить OpenSSL");
-        var outputTask = process.StandardOutput.ReadToEndAsync();
-        var errorTask = process.StandardError.ReadToEndAsync();
-        await process.StandardInput.WriteAsync(input);
-        process.StandardInput.Close();
-        await process.WaitForExitAsync();
-
-        var output = await outputTask;
-        var error = await errorTask;
-        if (process.ExitCode != 0)
-        {
-            throw new InvalidOperationException(decrypt
-                ? "Неверный пароль или повреждённые данные"
-                : $"OpenSSL завершился с ошибкой: {error.Trim()}");
-        }
-
-        return output.Trim();
-    }
-
-    private static string? FindModernOpenSsl()
-    {
-        var candidates = new[]
-        {
-            Path.Combine(AppContext.BaseDirectory, "openssl", "openssl.exe"),
-            @"C:\Program Files\Git\usr\bin\openssl.exe",
-            @"C:\Program Files\OpenSSL-Win64\bin\openssl.exe",
-            @"C:\Program Files\OpenSSL\bin\openssl.exe"
-        };
-
-        return candidates.FirstOrDefault(path => File.Exists(path) && IsModernVersion(ReadVersion(path)));
-    }
-
-    private static string ReadVersion(string executablePath)
-    {
+        var parts = encryptedText.Split(':');
+        if (parts.Length != 6 || parts[0] != "aesgcm" || parts[1] != "v1")
+            throw new InvalidOperationException("Неподдерживаемый формат шифротекста");
         try
         {
-            var startInfo = new ProcessStartInfo(executablePath, "version")
-            {
-                RedirectStandardOutput = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-            using var process = Process.Start(startInfo);
-            var version = process?.StandardOutput.ReadToEnd().Trim();
-            process?.WaitForExit();
-            return string.IsNullOrWhiteSpace(version) ? "OpenSSL" : version;
+            var salt = Convert.FromBase64String(parts[2]);
+            var nonce = Convert.FromBase64String(parts[3]);
+            var tag = Convert.FromBase64String(parts[4]);
+            var ciphertext = Convert.FromBase64String(parts[5]);
+            var key = Rfc2898DeriveBytes.Pbkdf2(password, salt, Iterations, HashAlgorithmName.SHA256, KeySize);
+            var plaintext = new byte[ciphertext.Length];
+            using var aes = new AesGcm(key, tag.Length);
+            aes.Decrypt(nonce, ciphertext, tag, plaintext);
+            CryptographicOperations.ZeroMemory(key);
+            return Encoding.UTF8.GetString(plaintext);
         }
-        catch
+        catch (Exception exception) when (exception is CryptographicException or FormatException)
         {
-            return "OpenSSL";
+            throw new InvalidOperationException("Неверный ключ или повреждённые данные", exception);
         }
-    }
-
-    private static bool IsModernVersion(string version) =>
-        version.StartsWith("OpenSSL 3.", StringComparison.Ordinal) ||
-        version.StartsWith("OpenSSL 1.1.1", StringComparison.Ordinal);
+    });
 }

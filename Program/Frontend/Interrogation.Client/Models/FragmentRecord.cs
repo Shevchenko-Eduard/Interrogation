@@ -6,6 +6,7 @@ public sealed class FragmentRecord
     public required string DocumentName { get; init; }
     public required string Preview { get; init; }
     public required string EncryptedPayload { get; init; }
+    public string? PlainText { get; init; }
     public int Length { get; init; }
     public DateTimeOffset CreatedAt { get; init; }
 

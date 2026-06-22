@@ -39,7 +39,7 @@
     <Border Grid.Row="0" Background="#1F2933" BorderBrush="#111827" BorderThickness="0,0,0,1">
       <Grid ColumnDefinitions="*,Auto" Margin="22,14">
         <StackPanel>
-          <TextBlock Text="Защита протоколов допроса" Foreground="#FFFFFF" FontSize="22" FontWeight="SemiBold" />
+          <TextBlock Text="Защита протоколов следственных действий" Foreground="#FFFFFF" FontSize="22" FontWeight="SemiBold" />
           <TextBlock Text="Работа с документами, фрагментами и самодостаточным контейнером .enc.json" Foreground="#C9D4E2" FontSize="12" Margin="0,4,0,0" />
         </StackPanel>
         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
@@ -129,6 +129,9 @@
             <TextBlock Text="Операции" Classes="title" />
             <TextBlock Text="{Binding CryptoEngineText}" Classes="caption" TextWrapping="Wrap" />
             <Button Content="Обновить список" Click="RefreshDocumentsButton_OnClick" HorizontalAlignment="Stretch" />
+            <ComboBox ItemsSource="{Binding ServerModes}" SelectedItem="{Binding SelectedServerMode}" />
+            <Button Content="Отправить на сервер" Click="UploadToServerButton_OnClick" Classes="primary" HorizontalAlignment="Stretch" IsEnabled="{Binding HasSelectedDocument}" />
+
             <Button Content="Зашифровать весь документ" Click="EncryptFullButton_OnClick" Classes="primary" HorizontalAlignment="Stretch" IsEnabled="{Binding CanEncrypt}" />
             <Button Content="Экспорт .enc" Click="ExportButton_OnClick" HorizontalAlignment="Stretch" IsEnabled="{Binding CanEncrypt}" />
             <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
