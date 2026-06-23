@@ -140,10 +140,25 @@ public sealed class InterrogationApiClient : IInterrogationApiClient
         {
             return;
         }
+
         var details = await response.Content.ReadAsStringAsync(cancellationToken);
-        var message = response.StatusCode == System.Net.HttpStatusCode.RequestEntityTooLarge
-            ? "Файл превышает серверный лимит 20 МБ"
-            : $"API {(int)response.StatusCode}: {details}";
+        var message = response.StatusCode switch
+        {
+            System.Net.HttpStatusCode.Forbidden =>
+                "Недостаточно прав для выполнения операции. Проверьте роли пользователя в Keycloak.",
+            System.Net.HttpStatusCode.Unauthorized =>
+                "Сеанс истек или токен не принят сервером. Выполните вход заново.",
+            System.Net.HttpStatusCode.NotFound =>
+                "Объект не найден на сервере. Обновите список документов.",
+            System.Net.HttpStatusCode.RequestEntityTooLarge =>
+                "Файл превышает серверный лимит 20 МБ.",
+            System.Net.HttpStatusCode.BadRequest =>
+                $"Сервер отклонил запрос: {NormalizeDetails(details)}",
+            _ => $"API {(int)response.StatusCode}: {NormalizeDetails(details)}"
+        };
         throw new HttpRequestException(message, null, response.StatusCode);
     }
+
+    private static string NormalizeDetails(string details) =>
+        string.IsNullOrWhiteSpace(details) ? "подробности не переданы" : details.Trim();
 }

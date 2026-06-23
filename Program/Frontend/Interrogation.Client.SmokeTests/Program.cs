@@ -6,7 +6,7 @@ using System.Text;
 using Interrogation.Client.Models;
 
 var cryptography = new OpenSslCryptographyService();
-Assert(cryptography.IsAvailable, $"OpenSSL unavailable: {cryptography.EngineDescription}");
+Assert(cryptography.IsAvailable, $"Cryptography unavailable: {cryptography.EngineDescription}");
 
 const string password = "Practice-Strong-2026";
 const string plainText = "Протокол: свидетель Иванов, адрес Краснодар.\nВторая строка документа.";
@@ -15,7 +15,7 @@ var encrypted = await cryptography.EncryptAsync(plainText, password);
 Assert(!encrypted.Contains("Иванов", StringComparison.Ordinal), "Ciphertext contains plaintext");
 
 var decrypted = await cryptography.DecryptAsync(encrypted, password);
-Assert(decrypted == plainText, "OpenSSL round-trip changed the document text");
+Assert(decrypted == plainText, "AES-GCM round-trip changed the document text");
 
 try
 {

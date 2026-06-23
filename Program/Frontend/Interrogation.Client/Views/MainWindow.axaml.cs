@@ -34,6 +34,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         PointerPressed += (_, _) => ResetInactivityTimer();
         KeyDown += (_, _) => ResetInactivityTimer();
+        KeyDown += MainWindow_OnKeyDown;
         Opened += (_, _) => ResetInactivityTimer();
         Closed += (_, _) => _inactivityTimer.Stop();
         _inactivityTimer.Tick += InactivityTimer_OnTick;
@@ -131,6 +132,7 @@ public partial class MainWindow : Window
             return;
         }
 
+        UseCachedSelectionIfNeeded();
         var password = await RequestPasswordAsync("Шифрование фрагмента", confirmPassword: true);
         if (password is not null)
         {
@@ -139,6 +141,39 @@ public partial class MainWindow : Window
         _cachedSelectedText = string.Empty;
         _cachedSelectionStart = -1;
         _cachedSelectionLength = 0;
+    }
+
+    private async void MainWindow_OnKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.KeyModifiers == KeyModifiers.Control && e.Key == Key.E)
+        {
+            e.Handled = true;
+            UseCachedSelectionIfNeeded();
+            if (ViewModel is null)
+            {
+                return;
+            }
+
+            var password = await RequestPasswordAsync("Шифрование фрагмента", confirmPassword: true);
+            if (password is not null)
+            {
+                await ViewModel.EncryptSelectedFragmentAsync(password);
+            }
+        }
+    }
+
+    private void UseCachedSelectionIfNeeded()
+    {
+        if (ViewModel is null || !string.IsNullOrWhiteSpace(ViewModel.SelectedFragmentText))
+        {
+            return;
+        }
+
+        CacheEditorSelection();
+        if (!string.IsNullOrWhiteSpace(_cachedSelectedText) && _cachedSelectionStart >= 0)
+        {
+            ViewModel.SetSelectedFragment(_cachedSelectedText, _cachedSelectionStart, _cachedSelectionLength);
+        }
     }
 
     private async void EncryptFullButton_OnClick(object? sender, RoutedEventArgs e)
@@ -182,6 +217,11 @@ public partial class MainWindow : Window
     private async void UploadToServerButton_OnClick(object? sender, RoutedEventArgs e)
     {
         if (ViewModel is not null) await ViewModel.UploadSelectedDocumentAsync();
+    }
+
+    private async void DeleteDocumentButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (ViewModel is not null) await ViewModel.DeleteSelectedDocumentAsync();
     }
 
     private async void UploadButton_OnClick(object? sender, RoutedEventArgs e)
