@@ -65,10 +65,15 @@ public sealed class MainWindowViewModel : ViewModelBase
             Documents.Clear();
             foreach (var document in documents)
             {
+                var displayName = DocumentContentReader.EnsureFileNameExtension(
+                    document.Name,
+                    document.Extension,
+                    document.ContentType,
+                    []);
                 Documents.Add(new DocumentItem
                 {
                     Id = document.Id,
-                    Name = document.Name,
+                    Name = displayName,
                     CaseNumber = document.Description ?? $"Документ API #{document.Id}",
                     Owner = document.CreatorId,
                     Status = document.EncryptionAlgorithm ?? "Без шифрования",
@@ -143,7 +148,7 @@ public sealed class MainWindowViewModel : ViewModelBase
                 }
             }
             document.Content = DocumentText;
-            var sourceFormat = Path.GetExtension(downloaded.FileName).TrimStart('.').ToLowerInvariant();
+            var sourceFormat = DocumentContentReader.DetectFormat(downloaded.FileName, new MemoryStream(downloaded.Content));
             if (sourceFormat is "docx" or "odt")
             {
                 document.OriginalFileBytes = downloaded.Content;
@@ -623,15 +628,42 @@ public sealed class MainWindowViewModel : ViewModelBase
 
     public void SaveDraft()
     {
-        if (SelectedDocument is null)
+        var document = SelectedDocument;
+        if (document is null)
         {
             StatusMessage = "Сначала выберите документ";
             return;
         }
 
-        SelectedDocument.Content = DocumentText;
-        SelectedDocument.UpdatedAt = DateTimeOffset.Now;
+        if (document.IsRemote)
+        {
+            var draft = new DocumentItem
+            {
+                Id = _nextDocumentId++,
+                Name = document.Name,
+                CaseNumber = $"Локальная копия {DateTimeOffset.Now:ddMMyy-HHmm}",
+                Owner = CurrentRoleText,
+                InvestigationActionType = document.InvestigationActionType,
+                Status = "Черновик",
+                UpdatedAt = DateTimeOffset.Now,
+                Content = DocumentText,
+                OriginalFileBytes = document.OriginalFileBytes,
+                OriginalText = document.OriginalText,
+                SourceFormat = document.SourceFormat,
+                FileLocation = "Локальная копия серверного документа"
+            };
+            Documents.Insert(0, draft);
+            SelectedDocument = draft;
+            SaveLocalDocuments();
+            StatusMessage = "Создан локальный черновик. Теперь его можно отправить на сервер как новый документ";
+            RecordAudit("Сохранение черновика", "Создана локальная копия", document.Name);
+            return;
+        }
+
+        document.Content = DocumentText;
+        document.UpdatedAt = DateTimeOffset.Now;
         OnPropertyChanged(nameof(DocumentInfo));
+        OnPropertyChanged(nameof(DocumentLocationText));
         SaveLocalDocuments();
         StatusMessage = "Черновик сохранен локально";
         RecordAudit("Сохранение черновика", "Успешно");

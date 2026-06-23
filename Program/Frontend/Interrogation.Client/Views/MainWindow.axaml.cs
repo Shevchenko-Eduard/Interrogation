@@ -385,14 +385,22 @@ public partial class MainWindow : Window
             DefaultExtension = format
         });
         if (file is null) return;
-        var bytes = format == "docx"
-            ? _documentExportService.ExportDocx(ViewModel.DocumentText, document)
-            : _documentExportService.ExportOdt(ViewModel.DocumentText, document);
-        await using var stream = await file.OpenWriteAsync();
-        stream.SetLength(0);
-        await stream.WriteAsync(bytes);
-        ViewModel.StatusMessage = $"Документ экспортирован: {file.Name}";
-        ViewModel.RecordAudit($"Экспорт {format.ToUpperInvariant()}", "Успешно");
+        try
+        {
+            var bytes = format == "docx"
+                ? _documentExportService.ExportDocx(ViewModel.DocumentText, document)
+                : _documentExportService.ExportOdt(ViewModel.DocumentText, document);
+            await using var stream = await file.OpenWriteAsync();
+            stream.SetLength(0);
+            await stream.WriteAsync(bytes);
+            ViewModel.StatusMessage = $"Документ экспортирован: {file.Name}";
+            ViewModel.RecordAudit($"Экспорт {format.ToUpperInvariant()}", "Успешно");
+        }
+        catch (Exception exception) when (exception is IOException or InvalidDataException or ArgumentException)
+        {
+            ViewModel.StatusMessage = $"Не удалось экспортировать документ: {exception.Message}";
+            ViewModel.RecordAudit($"Экспорт {format.ToUpperInvariant()}", $"Ошибка: {exception.Message}");
+        }
     }
 
     private static bool IsEncryptedContainer(string fileName, string content)

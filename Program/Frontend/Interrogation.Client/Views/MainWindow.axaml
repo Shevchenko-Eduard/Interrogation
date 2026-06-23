@@ -39,7 +39,7 @@
     <Border Grid.Row="0" Background="#1F2933" BorderBrush="#111827" BorderThickness="0,0,0,1">
       <Grid ColumnDefinitions="*,Auto" Margin="16,8">
         <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-          <Button Content="Справка" Click="AboutButton_OnClick" />
+          <Button Content="Справка" Click="AboutButton_OnClick" Background="#FFFFFF" Foreground="#111827" />
           <TextBlock Text="Ctrl+E: зашифровать выделение" Foreground="#C9D4E2" FontSize="12" VerticalAlignment="Center" />
         </StackPanel>
         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">

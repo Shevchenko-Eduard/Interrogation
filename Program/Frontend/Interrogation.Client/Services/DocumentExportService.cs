@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using System.Xml;
 using System.Xml.Linq;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
@@ -12,6 +13,7 @@ public sealed class DocumentExportService
     {
         if (document.SourceFormat == "docx" && document.OriginalFileBytes is not null)
         {
+            text = SanitizeXmlText(text);
             if (text == document.OriginalText) return document.OriginalFileBytes;
             var updated = TryUpdateDocx(document.OriginalFileBytes, text);
             if (updated is not null) return updated;
@@ -32,6 +34,7 @@ public sealed class DocumentExportService
     {
         if (document.SourceFormat == "odt" && document.OriginalFileBytes is not null)
         {
+            text = SanitizeXmlText(text);
             if (text == document.OriginalText) return document.OriginalFileBytes;
             var updated = TryUpdateOdt(document.OriginalFileBytes, text);
             if (updated is not null) return updated;
@@ -48,7 +51,7 @@ public sealed class DocumentExportService
         {
             var mainDocument = word.MainDocumentPart?.Document;
             var paragraphs = mainDocument?.Body?.Descendants<Paragraph>().ToArray();
-            var lines = Lines(text);
+            var lines = Lines(SanitizeXmlText(text));
             if (mainDocument is null || paragraphs is null || paragraphs.Length != lines.Length) return null;
             for (var index = 0; index < paragraphs.Length; index++)
             {
@@ -72,7 +75,7 @@ public sealed class DocumentExportService
         using var sourceArchive = new ZipArchive(input, ZipArchiveMode.Read);
         using (var targetArchive = new ZipArchive(output, ZipArchiveMode.Create, leaveOpen: true))
         {
-            var lines = Lines(text);
+            var lines = Lines(SanitizeXmlText(text));
             XNamespace textNs = "urn:oasis:names:tc:opendocument:xmlns:text:1.0";
             foreach (var entry in sourceArchive.Entries)
             {
@@ -108,5 +111,15 @@ public sealed class DocumentExportService
         return output.ToArray();
     }
 
-    private static string[] Lines(string text) => text.ReplaceLineEndings("\n").Split('\n');
+    private static string[] Lines(string text) => SanitizeXmlText(text).ReplaceLineEndings("\n").Split('\n');
+
+    private static string SanitizeXmlText(string text)
+    {
+        if (string.IsNullOrEmpty(text))
+        {
+            return string.Empty;
+        }
+
+        return string.Concat(text.Where(XmlConvert.IsXmlChar));
+    }
 }

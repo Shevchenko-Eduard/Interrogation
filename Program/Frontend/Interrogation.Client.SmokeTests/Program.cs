@@ -46,6 +46,11 @@ var importedText = await documentReader.ReadAsync("protocol.docx", docxStream);
 Assert(importedText == $"Протокол обыска{Environment.NewLine}Свидетель Иванов", ".docx paragraphs were imported incorrectly");
 Console.WriteLine("PASS: .docx paragraph import");
 
+docxStream.Position = 0;
+var importedDocxWithoutExtension = await documentReader.ReadAsync("protocol", docxStream);
+Assert(importedDocxWithoutExtension == importedText, ".docx without extension was not detected by content");
+Console.WriteLine("PASS: .docx content detection without extension");
+
 await using var odtStream = new MemoryStream();
 using (var archive = new ZipArchive(odtStream, ZipArchiveMode.Create, leaveOpen: true))
 {
@@ -78,6 +83,10 @@ var changedDocx = exporter.ExportDocx($"Изменённый протокол{En
 using var changedDocxStream = new MemoryStream(changedDocx);
 var changedDocxText = await documentReader.ReadAsync("changed.docx", changedDocxStream);
 Assert(changedDocxText.Contains("Свидетель Петров", StringComparison.Ordinal), "Changed DOCX export failed");
+var sanitizedDocx = exporter.ExportDocx("Текст" + '\u0003' + "после управляющего символа", docxItem);
+using var sanitizedDocxStream = new MemoryStream(sanitizedDocx);
+var sanitizedText = await documentReader.ReadAsync("sanitized.docx", sanitizedDocxStream);
+Assert(sanitizedText.Contains("Текстпосле", StringComparison.Ordinal), "DOCX export did not sanitize invalid XML characters");
 
 var odtItem = new DocumentItem
 {

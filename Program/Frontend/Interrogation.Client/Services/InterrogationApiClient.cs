@@ -59,10 +59,12 @@ public sealed class InterrogationApiClient : IInterrogationApiClient
         var bytes = target.ToArray();
         var headerName = response.Content.Headers.ContentDisposition?.FileNameStar
             ?? response.Content.Headers.ContentDisposition?.FileName?.Trim('"');
+        var contentType = response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream";
         var fileName = string.IsNullOrWhiteSpace(headerName)
-            ? fallbackName + extension
+            ? fallbackName
             : headerName;
-        return new(fileName, response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream", bytes);
+        fileName = DocumentContentReader.EnsureFileNameExtension(fileName, extension, contentType, bytes);
+        return new(fileName, contentType, bytes);
     }
 
     public async Task<ApiDocumentDetails> GetDocumentAsync(int id, CancellationToken cancellationToken = default) =>
