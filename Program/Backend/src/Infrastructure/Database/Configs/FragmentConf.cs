@@ -48,7 +48,7 @@ public class FragmentConf : IEntityTypeConfiguration<Fragment>
 
         #region index
         builder.HasIndex(_ => new { _.DocumentId, _.MarkerName })
-            .HasDatabaseName("uq__fragments__marker_name")
+            .HasDatabaseName("uq_fragments_document_id_marker_name")
             .IsUnique();
         #endregion
     }

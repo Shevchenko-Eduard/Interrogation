@@ -6,7 +6,7 @@ public sealed class Document
 {
     public int Id { get; init; }
     public int EncryptionTypeId { get; init; }
-    public int SecretId { get; init; }
+    public int? SecretId { get; init; }
     public string DocumentKey { get; init; }
     public string CreatorId { get; init; }
     public string Name { get; set; }
@@ -25,7 +25,7 @@ public sealed class Document
 #pragma warning restore CS9264, CS8618
     public Document(
         int encryptionTypeId,
-        int secretId,
+        int? secretId,
         string creatorId,
         string name,
         string? description,
