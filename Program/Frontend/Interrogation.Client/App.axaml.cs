@@ -10,10 +10,16 @@ namespace Interrogation.Client;
 
 public partial class App : Application
 {
-    private readonly IIdentityService _identityService = new KeycloakIdentityService();
+    private readonly ClientAppConfig _config = ClientAppConfig.Load();
+    private readonly IIdentityService _identityService;
     private readonly ICryptographyService _cryptographyService = new OpenSslCryptographyService();
     private readonly IAuditLogService _auditLogService = new JsonLineAuditLogService();
     private readonly IContainerIntegrityService _integrityService = new ContainerIntegrityService();
+
+    public App()
+    {
+        _identityService = new KeycloakIdentityService(_config);
+    }
 
     public override void Initialize()
     {
@@ -24,10 +30,22 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            ShowLogin(desktop, null);
+            _ = StartAsync(desktop);
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private async Task StartAsync(IClassicDesktopStyleApplicationLifetime desktop)
+    {
+        var session = await _identityService.TryRestoreSessionAsync();
+        if (session is null)
+        {
+            ShowLogin(desktop, null);
+            return;
+        }
+
+        ShowMainWindow(desktop, null, session);
     }
 
     private void ShowLogin(IClassicDesktopStyleApplicationLifetime desktop, MainWindow? currentWindow)
@@ -45,13 +63,13 @@ public partial class App : Application
 
     private void ShowMainWindow(
         IClassicDesktopStyleApplicationLifetime desktop,
-        LoginWindow loginWindow,
+        LoginWindow? loginWindow,
         UserSession session)
     {
         var mainWindow = new MainWindow
         {
             DataContext = new MainWindowViewModel(
-                new InterrogationApiClient(_identityService, session),
+                new InterrogationApiClient(_identityService, session, _config),
                 _cryptographyService,
                 _auditLogService,
                 _integrityService,
@@ -68,6 +86,6 @@ public partial class App : Application
             await ((MainWindowViewModel)mainWindow.DataContext).InitializeAsync();
         desktop.MainWindow = mainWindow;
         mainWindow.Show();
-        loginWindow.Close();
+        loginWindow?.Close();
     }
 }

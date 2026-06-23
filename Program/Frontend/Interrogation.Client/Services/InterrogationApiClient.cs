@@ -8,14 +8,18 @@ namespace Interrogation.Client.Services;
 public sealed class InterrogationApiClient : IInterrogationApiClient
 {
     public const int MaxUploadBytes = 20 * 1024 * 1024;
+    private readonly ClientAppConfig _config;
     private readonly HttpClient _httpClient;
     private readonly IIdentityService _identityService;
     private readonly UserSession _session;
 
-    public InterrogationApiClient(IIdentityService identityService, UserSession session)
+    int IInterrogationApiClient.MaxUploadBytes => _config.MaxUploadBytes;
+
+    public InterrogationApiClient(IIdentityService identityService, UserSession session, ClientAppConfig config)
     {
         _identityService = identityService;
         _session = session;
+        _config = config;
         _httpClient = new HttpClient(new HttpClientHandler
         {
             ServerCertificateCustomValidationCallback = (request, _, _, errors) =>
@@ -23,7 +27,8 @@ public sealed class InterrogationApiClient : IInterrogationApiClient
                 request.RequestUri?.Host.EndsWith(".docker.local", StringComparison.OrdinalIgnoreCase) == true
         })
         {
-            BaseAddress = new Uri("https://api.docker.local/")
+            BaseAddress = new Uri(config.ApiBaseUrl),
+            Timeout = TimeSpan.FromSeconds(config.HttpTimeoutSeconds)
         };
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session.AccessToken);
     }
@@ -83,8 +88,8 @@ public sealed class InterrogationApiClient : IInterrogationApiClient
 
     public async Task<CreatedApiDocument> UploadDocumentAsync(DocumentUpload upload, CancellationToken cancellationToken = default)
     {
-        if (upload.Content.Length > MaxUploadBytes)
-            throw new InvalidOperationException("Размер файла превышает серверный лимит 20 МБ");
+        if (upload.Content.Length > _config.MaxUploadBytes)
+            throw new InvalidOperationException($"Размер файла превышает серверный лимит {_config.MaxUploadBytes / 1024 / 1024} МБ");
         await EnsureTokenAsync(cancellationToken);
         using var form = new MultipartFormDataContent();
         var file = new ByteArrayContent(upload.Content);

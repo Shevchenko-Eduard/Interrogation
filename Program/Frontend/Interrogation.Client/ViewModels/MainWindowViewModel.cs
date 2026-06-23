@@ -14,6 +14,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         "local-documents.json");
     private readonly IInterrogationApiClient _apiClient;
     private readonly DocumentContentReader _documentContentReader = new();
+    private readonly DocumentExportService _documentExportService = new();
     private readonly ICryptographyService _cryptographyService;
     private readonly IAuditLogService _auditLogService;
     private readonly IContainerIntegrityService _integrityService;
@@ -74,7 +75,8 @@ public sealed class MainWindowViewModel : ViewModelBase
                     UpdatedAt = document.DateOfCreate,
                     Content = "Документ хранится на сервере. Выберите его для загрузки содержимого.",
                     IsRemote = true,
-                    RemoteExtension = document.Extension
+                    RemoteExtension = document.Extension,
+                    FileLocation = "Сервер API"
                 });
             }
             foreach (var document in localDocuments)
@@ -228,6 +230,7 @@ public sealed class MainWindowViewModel : ViewModelBase
                     ? "Документ не выбран"
                     : $"Открыт документ: {value.Name}";
                 OnPropertyChanged(nameof(DocumentInfo));
+                OnPropertyChanged(nameof(DocumentLocationText));
                 OnPropertyChanged(nameof(HasSelectedDocument));
                 OnPropertyChanged(nameof(CanEncrypt));
                 OnPropertyChanged(nameof(CanDecrypt));
@@ -301,7 +304,11 @@ public sealed class MainWindowViewModel : ViewModelBase
         }
     }
 
-    public void ImportDocument(string fileName, string content, byte[]? originalBytes = null, string? sourceFormat = null)
+    public string DocumentLocationText => SelectedDocument is null
+        ? "Место хранения: документ не выбран"
+        : $"Место хранения: {SelectedDocument.StorageText}";
+
+    public void ImportDocument(string fileName, string content, byte[]? originalBytes = null, string? sourceFormat = null, string? fileLocation = null)
     {
         var document = new DocumentItem
         {
@@ -314,7 +321,8 @@ public sealed class MainWindowViewModel : ViewModelBase
             Content = content,
             OriginalFileBytes = originalBytes,
             OriginalText = originalBytes is null ? null : content,
-            SourceFormat = sourceFormat
+            SourceFormat = sourceFormat,
+            FileLocation = fileLocation ?? "Локальное хранилище"
         };
 
         Documents.Insert(0, document);
@@ -357,7 +365,8 @@ public sealed class MainWindowViewModel : ViewModelBase
                 Status = "Зашифрованный контейнер",
                 UpdatedAt = DateTimeOffset.Now,
                 Content = "[ДОКУМЕНТ ЗАШИФРОВАН]\n\nДля просмотра содержимого выберите роль администратора и выполните расшифровку.",
-                EncryptedPayload = payload
+                EncryptedPayload = payload,
+                FileLocation = fileName
             };
 
             if (format == "interrogation.enc.v3")
@@ -585,6 +594,10 @@ public sealed class MainWindowViewModel : ViewModelBase
                 var plainText = await _cryptographyService.DecryptAsync(fragment.EncryptedPayload, password);
                 DocumentText = DocumentText.Replace(fragment.Marker, plainText, StringComparison.Ordinal);
             }
+            foreach (var fragment in Fragments.Where(item => item.DocumentName == SelectedDocument.Name).ToArray())
+            {
+                Fragments.Remove(fragment);
+            }
 
             SelectedDocument.Content = DocumentText;
             SelectedDocument.EncryptedPayload = null;
@@ -767,9 +780,8 @@ public sealed class MainWindowViewModel : ViewModelBase
             }
             else if (mode == 2)
             {
-                bytes = Encoding.UTF8.GetBytes(DocumentText);
-                fileName = Path.GetFileNameWithoutExtension(document.Name) + ".txt";
-                contentType = "text/plain";
+                EnsurePartDocumentContainsOnlyMarkers(localFragments);
+                (bytes, fileName, contentType) = BuildPartDocumentUpload(document);
             }
             else
             {
@@ -780,8 +792,8 @@ public sealed class MainWindowViewModel : ViewModelBase
                     : document.SourceFormat == "odt" ? "application/vnd.oasis.opendocument.text" : "text/plain";
             }
 
-            if (bytes.Length > InterrogationApiClient.MaxUploadBytes)
-                throw new InvalidOperationException("Размер файла превышает серверный лимит 20 МБ");
+            if (bytes.Length > _apiClient.MaxUploadBytes)
+                throw new InvalidOperationException($"Размер файла превышает серверный лимит {_apiClient.MaxUploadBytes / 1024 / 1024} МБ");
 
             var created = await _apiClient.UploadDocumentAsync(new DocumentUpload(
                 fileName, contentType, bytes, mode, secret.Id, Path.GetFileNameWithoutExtension(document.Name),
@@ -825,6 +837,34 @@ public sealed class MainWindowViewModel : ViewModelBase
         {
             await _cryptographyService.DecryptAsync(fragment.EncryptedPayload, password);
         }
+    }
+
+    private void EnsurePartDocumentContainsOnlyMarkers(IReadOnlyCollection<FragmentRecord> localFragments)
+    {
+        foreach (var fragment in localFragments)
+        {
+            if (!DocumentText.Contains(fragment.Marker, StringComparison.Ordinal))
+                throw new InvalidOperationException($"В документе отсутствует маркер фрагмента {fragment.Marker}. Повторите шифрование фрагмента.");
+            if (!string.IsNullOrEmpty(fragment.PlainText) && DocumentText.Contains(fragment.PlainText, StringComparison.Ordinal))
+                throw new InvalidOperationException("В документе остался открытый текст зашифрованного фрагмента. Повторите выделение и шифрование.");
+        }
+    }
+
+    private (byte[] Bytes, string FileName, string ContentType) BuildPartDocumentUpload(DocumentItem document)
+    {
+        var baseName = Path.GetFileNameWithoutExtension(document.Name);
+        return document.SourceFormat switch
+        {
+            "docx" => (
+                _documentExportService.ExportDocx(DocumentText, document),
+                baseName + ".docx",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
+            "odt" => (
+                _documentExportService.ExportOdt(DocumentText, document),
+                baseName + ".odt",
+                "application/vnd.oasis.opendocument.text"),
+            _ => (Encoding.UTF8.GetBytes(DocumentText), baseName + ".txt", "text/plain")
+        };
     }
 
     private async Task<string> BuildServerFullContainerJsonAsync(DocumentItem document, string serverSecret, IReadOnlyCollection<FragmentRecord> localFragments)
@@ -924,7 +964,8 @@ public sealed class MainWindowViewModel : ViewModelBase
                 document.EncryptedPayload,
                 document.IntegritySalt,
                 document.IntegrityTag,
-                document.SourceFormat)).ToArray();
+                document.SourceFormat,
+                document.FileLocation)).ToArray();
             var fragments = Fragments.Select(fragment => new LocalFragmentState(
                 fragment.Marker,
                 fragment.DocumentName,
@@ -968,7 +1009,8 @@ public sealed class MainWindowViewModel : ViewModelBase
                     EncryptedPayload = item.EncryptedPayload,
                     IntegritySalt = item.IntegritySalt,
                     IntegrityTag = item.IntegrityTag,
-                    SourceFormat = item.SourceFormat
+                    SourceFormat = item.SourceFormat,
+                    FileLocation = item.FileLocation
                 });
                 _nextDocumentId = Math.Max(_nextDocumentId, item.Id + 1);
             }
@@ -1033,7 +1075,8 @@ public sealed class MainWindowViewModel : ViewModelBase
         string? EncryptedPayload,
         string? IntegritySalt,
         string? IntegrityTag,
-        string? SourceFormat);
+        string? SourceFormat,
+        string? FileLocation);
 
     private sealed record LocalFragmentState(
         string Marker,

@@ -4,6 +4,7 @@ namespace Interrogation.Client.Services;
 
 public interface IInterrogationApiClient
 {
+    int MaxUploadBytes { get; }
     Task<IReadOnlyList<ApiDocument>> GetDocumentsAsync(CancellationToken cancellationToken = default);
     Task<DownloadedDocument> DownloadDocumentAsync(int id, string fallbackName, string extension, CancellationToken cancellationToken = default);
     Task<ApiDocumentDetails> GetDocumentAsync(int id, CancellationToken cancellationToken = default);

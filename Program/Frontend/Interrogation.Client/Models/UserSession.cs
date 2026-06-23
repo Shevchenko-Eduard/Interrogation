@@ -1,9 +1,12 @@
+using System.Text.Json.Serialization;
+
 namespace Interrogation.Client.Models;
 
 public sealed class UserSession
 {
+    [JsonConstructor]
     public UserSession(string userName, string displayName, UserRole role, string accessToken,
-        string refreshToken, string? idToken, DateTimeOffset expiresAt, IReadOnlySet<string> roles)
+        string refreshToken, string? idToken, DateTimeOffset expiresAt, IReadOnlySet<string>? roles)
     {
         UserName = userName;
         DisplayName = displayName;
@@ -12,7 +15,7 @@ public sealed class UserSession
         RefreshToken = refreshToken;
         IdToken = idToken;
         ExpiresAt = expiresAt;
-        Roles = roles;
+        Roles = roles ?? new HashSet<string>();
     }
 
     public string UserName { get; }

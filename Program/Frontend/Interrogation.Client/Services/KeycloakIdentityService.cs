@@ -12,15 +12,26 @@ namespace Interrogation.Client.Services;
 
 public sealed class KeycloakIdentityService : IIdentityService
 {
-    private const string Authority = "https://auth.docker.local/realms/employee";
-    private const string ClientId = "Interrogation";
-    private const string BackendClientId = "Interrogation-api";
-    private readonly HttpClient _httpClient = new(new HttpClientHandler
+    private static readonly string SessionPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        "InterrogationClient",
+        "session.json");
+    private readonly ClientAppConfig _config;
+    private readonly HttpClient _httpClient;
+
+    public KeycloakIdentityService(ClientAppConfig config)
     {
-        ServerCertificateCustomValidationCallback = (request, _, _, errors) =>
-            errors == System.Net.Security.SslPolicyErrors.None ||
-            request.RequestUri?.Host.EndsWith(".docker.local", StringComparison.OrdinalIgnoreCase) == true
-    });
+        _config = config;
+        _httpClient = new HttpClient(new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = (request, _, _, errors) =>
+                errors == System.Net.Security.SslPolicyErrors.None ||
+                request.RequestUri?.Host.EndsWith(".docker.local", StringComparison.OrdinalIgnoreCase) == true
+        })
+        {
+            Timeout = TimeSpan.FromSeconds(config.HttpTimeoutSeconds)
+        };
+    }
 
     public async Task<LoginResult> LoginAsync(CancellationToken cancellationToken = default)
     {
@@ -33,9 +44,9 @@ public sealed class KeycloakIdentityService : IIdentityService
             var state = Base64Url(RandomNumberGenerator.GetBytes(24));
             var verifier = Base64Url(RandomNumberGenerator.GetBytes(48));
             var challenge = Base64Url(SHA256.HashData(Encoding.ASCII.GetBytes(verifier)));
-            var authorizationUrl = Authority + "/protocol/openid-connect/auth?" + BuildQuery(new Dictionary<string, string>
+            var authorizationUrl = _config.KeycloakAuthority + "/protocol/openid-connect/auth?" + BuildQuery(new Dictionary<string, string>
             {
-                ["client_id"] = ClientId,
+                ["client_id"] = _config.KeycloakClientId,
                 ["response_type"] = "code",
                 ["scope"] = "openid profile roles",
                 ["redirect_uri"] = redirectUri,
@@ -60,11 +71,11 @@ public sealed class KeycloakIdentityService : IIdentityService
             }
 
             using var tokenResponse = await _httpClient.PostAsync(
-                Authority + "/protocol/openid-connect/token",
+                _config.KeycloakAuthority + "/protocol/openid-connect/token",
                 new FormUrlEncodedContent(new Dictionary<string, string>
                 {
                     ["grant_type"] = "authorization_code",
-                    ["client_id"] = ClientId,
+                    ["client_id"] = _config.KeycloakClientId,
                     ["code"] = code,
                     ["redirect_uri"] = redirectUri,
                     ["code_verifier"] = verifier
@@ -76,7 +87,9 @@ public sealed class KeycloakIdentityService : IIdentityService
             }
             var token = JsonSerializer.Deserialize<TokenResponse>(tokenJson)
                 ?? throw new InvalidOperationException("Пустой ответ Keycloak");
-            return new(CreateSession(token), null);
+            var session = CreateSession(token);
+            SaveSession(session);
+            return new(session, null);
         }
         catch (OperationCanceledException)
         {
@@ -90,11 +103,11 @@ public sealed class KeycloakIdentityService : IIdentityService
 
     public async Task RefreshAsync(UserSession session, CancellationToken cancellationToken = default)
     {
-        using var response = await _httpClient.PostAsync(Authority + "/protocol/openid-connect/token",
+        using var response = await _httpClient.PostAsync(_config.KeycloakAuthority + "/protocol/openid-connect/token",
             new FormUrlEncodedContent(new Dictionary<string, string>
             {
                 ["grant_type"] = "refresh_token",
-                ["client_id"] = ClientId,
+                ["client_id"] = _config.KeycloakClientId,
                 ["refresh_token"] = session.RefreshToken
             }), cancellationToken);
         response.EnsureSuccessStatusCode();
@@ -104,20 +117,48 @@ public sealed class KeycloakIdentityService : IIdentityService
         session.RefreshToken = token.RefreshToken ?? session.RefreshToken;
         session.IdToken = token.IdToken ?? session.IdToken;
         session.ExpiresAt = DateTimeOffset.Now.AddSeconds(token.ExpiresIn);
+        SaveSession(session);
     }
 
     public async Task LogoutAsync(UserSession session, CancellationToken cancellationToken = default)
     {
-        using var response = await _httpClient.PostAsync(Authority + "/protocol/openid-connect/logout",
+        using var response = await _httpClient.PostAsync(_config.KeycloakAuthority + "/protocol/openid-connect/logout",
             new FormUrlEncodedContent(new Dictionary<string, string>
             {
-                ["client_id"] = ClientId,
+                ["client_id"] = _config.KeycloakClientId,
                 ["refresh_token"] = session.RefreshToken
             }), cancellationToken);
+        DeleteSavedSession();
         response.EnsureSuccessStatusCode();
     }
 
-    private static UserSession CreateSession(TokenResponse token)
+    public async Task<UserSession?> TryRestoreSessionAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            if (!File.Exists(SessionPath)) return null;
+            var saved = JsonSerializer.Deserialize<SavedSession>(await File.ReadAllTextAsync(SessionPath, cancellationToken));
+            if (saved is null || string.IsNullOrWhiteSpace(saved.RefreshToken)) return null;
+            var session = new UserSession(
+                saved.UserName,
+                saved.DisplayName,
+                saved.Role,
+                saved.AccessToken,
+                saved.RefreshToken,
+                saved.IdToken,
+                saved.ExpiresAt,
+                saved.Roles.ToHashSet(StringComparer.OrdinalIgnoreCase));
+            await RefreshAsync(session, cancellationToken);
+            return session;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or JsonException or HttpRequestException or InvalidOperationException)
+        {
+            DeleteSavedSession();
+            return null;
+        }
+    }
+
+    private UserSession CreateSession(TokenResponse token)
     {
         var accessToken = token.AccessToken;
         var parts = accessToken.Split('.');
@@ -128,7 +169,7 @@ public sealed class KeycloakIdentityService : IIdentityService
         var displayName = GetString(root, "name", userName);
         var roles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         if (root.TryGetProperty("resource_access", out var resources) &&
-            resources.TryGetProperty(BackendClientId, out var backend) &&
+            resources.TryGetProperty(_config.BackendClientId, out var backend) &&
             backend.TryGetProperty("roles", out var roleArray))
         {
             foreach (var role in roleArray.EnumerateArray())
@@ -141,6 +182,28 @@ public sealed class KeycloakIdentityService : IIdentityService
         return new(userName, displayName, roleType, accessToken,
             token.RefreshToken ?? string.Empty, token.IdToken,
             DateTimeOffset.Now.AddSeconds(token.ExpiresIn), roles);
+    }
+
+    private static void SaveSession(UserSession session)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(SessionPath)!);
+        var saved = new SavedSession(
+            session.UserName,
+            session.DisplayName,
+            session.Role,
+            session.AccessToken,
+            session.RefreshToken,
+            session.IdToken,
+            session.ExpiresAt,
+            session.Roles.ToArray());
+        File.WriteAllText(SessionPath, JsonSerializer.Serialize(saved, new JsonSerializerOptions { WriteIndented = true }));
+    }
+
+    private static void DeleteSavedSession()
+    {
+        try { if (File.Exists(SessionPath)) File.Delete(SessionPath); }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
     }
 
     private static async Task<Dictionary<string, string>> ReadCallbackAsync(TcpClient client, CancellationToken cancellationToken)
@@ -157,7 +220,9 @@ public sealed class KeycloakIdentityService : IIdentityService
 
     private static async Task WriteBrowserResponseAsync(TcpClient client, bool success, CancellationToken cancellationToken)
     {
-        var body = success ? "<h2>Вход выполнен</h2><p>Вернитесь в приложение.</p>" : "<h2>Вход отменён</h2>";
+        var body = success
+            ? "<script>window.close();</script><h2>Вход выполнен</h2><p>Эту вкладку можно закрыть.</p>"
+            : "<h2>Вход отменён</h2>";
         var bytes = Encoding.UTF8.GetBytes($"<html><body>{body}</body></html>");
         var header = Encoding.ASCII.GetBytes($"HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {bytes.Length}\r\nConnection: close\r\n\r\n");
         await client.GetStream().WriteAsync(header, cancellationToken);
@@ -180,4 +245,14 @@ public sealed class KeycloakIdentityService : IIdentityService
         [property: JsonPropertyName("refresh_token")] string? RefreshToken,
         [property: JsonPropertyName("id_token")] string? IdToken,
         [property: JsonPropertyName("expires_in")] int ExpiresIn);
+
+    private sealed record SavedSession(
+        string UserName,
+        string DisplayName,
+        UserRole Role,
+        string AccessToken,
+        string RefreshToken,
+        string? IdToken,
+        DateTimeOffset ExpiresAt,
+        string[] Roles);
 }

@@ -127,6 +127,16 @@ public partial class MainWindow : Window
 
     private async void EncryptFragmentButton_OnClick(object? sender, RoutedEventArgs e)
     {
+        await EncryptSelectedFragmentFromUiAsync();
+    }
+
+    private async void EncryptFragmentMenuItem_OnClick(object? sender, RoutedEventArgs e)
+    {
+        await EncryptSelectedFragmentFromUiAsync();
+    }
+
+    private async Task EncryptSelectedFragmentFromUiAsync()
+    {
         if (ViewModel is null)
         {
             return;
@@ -148,17 +158,7 @@ public partial class MainWindow : Window
         if (e.KeyModifiers == KeyModifiers.Control && e.Key == Key.E)
         {
             e.Handled = true;
-            UseCachedSelectionIfNeeded();
-            if (ViewModel is null)
-            {
-                return;
-            }
-
-            var password = await RequestPasswordAsync("Шифрование фрагмента", confirmPassword: true);
-            if (password is not null)
-            {
-                await ViewModel.EncryptSelectedFragmentAsync(password);
-            }
+            await EncryptSelectedFragmentFromUiAsync();
         }
     }
 
@@ -224,6 +224,41 @@ public partial class MainWindow : Window
         if (ViewModel is not null) await ViewModel.DeleteSelectedDocumentAsync();
     }
 
+    private async void AboutButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        var closeButton = new Button
+        {
+            Content = "Закрыть",
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right
+        };
+        var dialog = new Window
+        {
+            Title = "О программе",
+            Width = 460,
+            Height = 260,
+            CanResize = false,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Content = new Border
+            {
+                Padding = new Avalonia.Thickness(22),
+                Child = new StackPanel
+                {
+                    Spacing = 10,
+                    Children =
+                    {
+                        new TextBlock { Text = "Защита документов", FontSize = 20, FontWeight = Avalonia.Media.FontWeight.SemiBold },
+                        new TextBlock { Text = "Алгоритм: AES-256-GCM через System.Security.Cryptography", TextWrapping = Avalonia.Media.TextWrapping.Wrap },
+                        new TextBlock { Text = "Ключ: локальный пароль или секрет сервера, PBKDF2-SHA256 для контейнера.", TextWrapping = Avalonia.Media.TextWrapping.Wrap },
+                        new TextBlock { Text = "Горячая клавиша: Ctrl+E шифрует выделенный фрагмент.", TextWrapping = Avalonia.Media.TextWrapping.Wrap },
+                        closeButton
+                    }
+                }
+            }
+        };
+        closeButton.Click += (_, _) => dialog.Close();
+        await dialog.ShowDialog(this);
+    }
+
     private async void UploadButton_OnClick(object? sender, RoutedEventArgs e)
     {
         if (ViewModel is null)
@@ -274,7 +309,8 @@ public partial class MainWindow : Window
             file.Name,
             content,
             preserveSource ? fileBytes : null,
-            preserveSource ? sourceFormat : null);
+            preserveSource ? sourceFormat : null,
+            file.Path?.LocalPath);
     }
 
     private async void ExportButton_OnClick(object? sender, RoutedEventArgs e)
