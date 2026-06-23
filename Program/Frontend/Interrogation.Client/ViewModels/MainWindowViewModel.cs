@@ -8,8 +8,13 @@ namespace Interrogation.Client.ViewModels;
 
 public sealed class MainWindowViewModel : ViewModelBase
 {
+    private static readonly string LocalStorePath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        "InterrogationClient",
+        "local-documents.json");
     private readonly IInterrogationApiClient _apiClient;
     private readonly DocumentContentReader _documentContentReader = new();
+    private readonly DocumentExportService _documentExportService = new();
     private readonly ICryptographyService _cryptographyService;
     private readonly IAuditLogService _auditLogService;
     private readonly IContainerIntegrityService _integrityService;
@@ -45,6 +50,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         Fragments = new ObservableCollection<FragmentRecord>();
         _auditHistory = new List<AuditRecord>(_auditLogService.LoadRecent(300));
         AuditLog = new ObservableCollection<AuditRecord>(_auditHistory);
+        LoadLocalDocuments();
         RecordAudit("Вход в систему", "Успешно", "Система");
     }
 
@@ -55,21 +61,32 @@ public sealed class MainWindowViewModel : ViewModelBase
         try
         {
             var documents = await _apiClient.GetDocumentsAsync();
+            var localDocuments = Documents.Where(document => !document.IsRemote).ToArray();
             Documents.Clear();
             foreach (var document in documents)
             {
+                var displayName = DocumentContentReader.EnsureFileNameExtension(
+                    document.Name,
+                    document.Extension,
+                    document.ContentType,
+                    []);
                 Documents.Add(new DocumentItem
                 {
                     Id = document.Id,
-                    Name = document.Name,
+                    Name = displayName,
                     CaseNumber = document.Description ?? $"Документ API #{document.Id}",
                     Owner = document.CreatorId,
                     Status = document.EncryptionAlgorithm ?? "Без шифрования",
                     UpdatedAt = document.DateOfCreate,
                     Content = "Документ хранится на сервере. Выберите его для загрузки содержимого.",
                     IsRemote = true,
-                    RemoteExtension = document.Extension
+                    RemoteExtension = document.Extension,
+                    FileLocation = "Сервер API"
                 });
+            }
+            foreach (var document in localDocuments)
+            {
+                Documents.Add(document);
             }
             SelectedDocument = Documents.FirstOrDefault();
             StatusMessage = $"Загружено документов: {Documents.Count}";
@@ -131,7 +148,7 @@ public sealed class MainWindowViewModel : ViewModelBase
                 }
             }
             document.Content = DocumentText;
-            var sourceFormat = Path.GetExtension(downloaded.FileName).TrimStart('.').ToLowerInvariant();
+            var sourceFormat = DocumentContentReader.DetectFormat(downloaded.FileName, new MemoryStream(downloaded.Content));
             if (sourceFormat is "docx" or "odt")
             {
                 document.OriginalFileBytes = downloaded.Content;
@@ -218,7 +235,9 @@ public sealed class MainWindowViewModel : ViewModelBase
                     ? "Документ не выбран"
                     : $"Открыт документ: {value.Name}";
                 OnPropertyChanged(nameof(DocumentInfo));
+                OnPropertyChanged(nameof(DocumentLocationText));
                 OnPropertyChanged(nameof(HasSelectedDocument));
+                OnPropertyChanged(nameof(CanEncrypt));
                 OnPropertyChanged(nameof(CanDecrypt));
             }
         }
@@ -290,7 +309,11 @@ public sealed class MainWindowViewModel : ViewModelBase
         }
     }
 
-    public void ImportDocument(string fileName, string content, byte[]? originalBytes = null, string? sourceFormat = null)
+    public string DocumentLocationText => SelectedDocument is null
+        ? "Место хранения: документ не выбран"
+        : $"Место хранения: {SelectedDocument.StorageText}";
+
+    public void ImportDocument(string fileName, string content, byte[]? originalBytes = null, string? sourceFormat = null, string? fileLocation = null)
     {
         var document = new DocumentItem
         {
@@ -303,12 +326,14 @@ public sealed class MainWindowViewModel : ViewModelBase
             Content = content,
             OriginalFileBytes = originalBytes,
             OriginalText = originalBytes is null ? null : content,
-            SourceFormat = sourceFormat
+            SourceFormat = sourceFormat,
+            FileLocation = fileLocation ?? "Локальное хранилище"
         };
 
         Documents.Insert(0, document);
         SelectedDocument = document;
         StatusMessage = $"Файл загружен: {fileName}";
+        SaveLocalDocuments();
         RecordAudit("Открытие документа", "Успешно", fileName);
     }
 
@@ -345,7 +370,8 @@ public sealed class MainWindowViewModel : ViewModelBase
                 Status = "Зашифрованный контейнер",
                 UpdatedAt = DateTimeOffset.Now,
                 Content = "[ДОКУМЕНТ ЗАШИФРОВАН]\n\nДля просмотра содержимого выберите роль администратора и выполните расшифровку.",
-                EncryptedPayload = payload
+                EncryptedPayload = payload,
+                FileLocation = fileName
             };
 
             if (format == "interrogation.enc.v3")
@@ -394,6 +420,7 @@ public sealed class MainWindowViewModel : ViewModelBase
             Documents.Insert(0, document);
             SelectedDocument = document;
             StatusMessage = $"Контейнер загружен: {fileName}";
+            SaveLocalDocuments();
             RecordAudit("Открытие контейнера", "Успешно", fileName);
         }
         catch (JsonException)
@@ -424,9 +451,14 @@ public sealed class MainWindowViewModel : ViewModelBase
         }
 
         IsBusy = true;
-        StatusMessage = "OpenSSL шифрует документ...";
+        StatusMessage = "AES-256-GCM шифрует документ...";
         try
         {
+            if (!string.IsNullOrWhiteSpace(SelectedDocument.EncryptedPayload))
+                throw new InvalidOperationException("Документ уже зашифрован. Сначала расшифруйте его.");
+            if (Fragments.Any(item => item.DocumentName == SelectedDocument.Name))
+                throw new InvalidOperationException("В документе уже есть зашифрованные фрагменты. Для полного шифрования сначала расшифруйте документ.");
+
             await ValidateFragmentPasswordsAsync(SelectedDocument.Name, password);
             SelectedDocument.EncryptedPayload = await _cryptographyService.EncryptAsync(DocumentText, password);
             SelectedDocument.Content = "[ДОКУМЕНТ ЗАШИФРОВАН]\n\nСодержимое скрыто. Для просмотра требуется роль администратора и пароль.";
@@ -434,7 +466,8 @@ public sealed class MainWindowViewModel : ViewModelBase
             SelectedDocument.UpdatedAt = DateTimeOffset.Now;
             DocumentText = SelectedDocument.Content;
             OnPropertyChanged(nameof(DocumentInfo));
-            StatusMessage = "Документ зашифрован с помощью OpenSSL";
+            SaveLocalDocuments();
+            StatusMessage = "Документ зашифрован с помощью AES-256-GCM";
             RecordAudit("Шифрование документа", "Успешно");
         }
         catch (InvalidOperationException exception)
@@ -474,9 +507,12 @@ public sealed class MainWindowViewModel : ViewModelBase
         }
 
         IsBusy = true;
-        StatusMessage = "OpenSSL шифрует выбранный фрагмент...";
+        StatusMessage = "AES-256-GCM шифрует выбранный фрагмент...";
         try
         {
+            if (!string.IsNullOrWhiteSpace(SelectedDocument.EncryptedPayload))
+                throw new InvalidOperationException("Документ уже полностью зашифрован. Сначала расшифруйте его.");
+
             await ValidateFragmentPasswordsAsync(SelectedDocument.Name, password);
             var marker = $"[ENC-FRAGMENT-{DateTimeOffset.Now:HHmmssfff}]";
         var preview = SelectedFragmentText.Length > 80
@@ -506,7 +542,8 @@ public sealed class MainWindowViewModel : ViewModelBase
         _selectedFragmentStart = -1;
         _selectedFragmentLength = 0;
         OnPropertyChanged(nameof(DocumentInfo));
-            StatusMessage = "Фрагмент зашифрован с помощью OpenSSL";
+            SaveLocalDocuments();
+            StatusMessage = "Фрагмент зашифрован с помощью AES-256-GCM";
             RecordAudit("Шифрование фрагмента", "Успешно");
         }
         catch (InvalidOperationException exception)
@@ -535,7 +572,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         }
 
         IsBusy = true;
-        StatusMessage = "OpenSSL расшифровывает документ...";
+        StatusMessage = "AES-256-GCM расшифровывает документ...";
         try
         {
             if (!string.IsNullOrWhiteSpace(SelectedDocument.IntegritySalt) &&
@@ -562,6 +599,10 @@ public sealed class MainWindowViewModel : ViewModelBase
                 var plainText = await _cryptographyService.DecryptAsync(fragment.EncryptedPayload, password);
                 DocumentText = DocumentText.Replace(fragment.Marker, plainText, StringComparison.Ordinal);
             }
+            foreach (var fragment in Fragments.Where(item => item.DocumentName == SelectedDocument.Name).ToArray())
+            {
+                Fragments.Remove(fragment);
+            }
 
             SelectedDocument.Content = DocumentText;
             SelectedDocument.EncryptedPayload = null;
@@ -570,7 +611,8 @@ public sealed class MainWindowViewModel : ViewModelBase
             SelectedDocument.Status = "Расшифрован";
             SelectedDocument.UpdatedAt = DateTimeOffset.Now;
             OnPropertyChanged(nameof(DocumentInfo));
-            StatusMessage = "Документ расшифрован с помощью OpenSSL";
+            SaveLocalDocuments();
+            StatusMessage = "Документ расшифрован с помощью AES-256-GCM";
             RecordAudit("Расшифрование документа", "Успешно");
         }
         catch (InvalidOperationException exception)
@@ -586,17 +628,83 @@ public sealed class MainWindowViewModel : ViewModelBase
 
     public void SaveDraft()
     {
-        if (SelectedDocument is null)
+        var document = SelectedDocument;
+        if (document is null)
         {
             StatusMessage = "Сначала выберите документ";
             return;
         }
 
-        SelectedDocument.Content = DocumentText;
-        SelectedDocument.UpdatedAt = DateTimeOffset.Now;
+        if (document.IsRemote)
+        {
+            var draft = new DocumentItem
+            {
+                Id = _nextDocumentId++,
+                Name = document.Name,
+                CaseNumber = $"Локальная копия {DateTimeOffset.Now:ddMMyy-HHmm}",
+                Owner = CurrentRoleText,
+                InvestigationActionType = document.InvestigationActionType,
+                Status = "Черновик",
+                UpdatedAt = DateTimeOffset.Now,
+                Content = DocumentText,
+                OriginalFileBytes = document.OriginalFileBytes,
+                OriginalText = document.OriginalText,
+                SourceFormat = document.SourceFormat,
+                FileLocation = "Локальная копия серверного документа"
+            };
+            Documents.Insert(0, draft);
+            SelectedDocument = draft;
+            SaveLocalDocuments();
+            StatusMessage = "Создан локальный черновик. Теперь его можно отправить на сервер как новый документ";
+            RecordAudit("Сохранение черновика", "Создана локальная копия", document.Name);
+            return;
+        }
+
+        document.Content = DocumentText;
+        document.UpdatedAt = DateTimeOffset.Now;
         OnPropertyChanged(nameof(DocumentInfo));
+        OnPropertyChanged(nameof(DocumentLocationText));
+        SaveLocalDocuments();
         StatusMessage = "Черновик сохранен локально";
         RecordAudit("Сохранение черновика", "Успешно");
+    }
+
+    public async Task DeleteSelectedDocumentAsync()
+    {
+        var document = SelectedDocument;
+        if (document is null || IsBusy)
+        {
+            StatusMessage = "Сначала выберите документ";
+            return;
+        }
+
+        IsBusy = true;
+        try
+        {
+            if (document.IsRemote)
+            {
+                await _apiClient.DeleteDocumentAsync(document.Id);
+            }
+
+            Documents.Remove(document);
+            foreach (var fragment in Fragments.Where(item => item.DocumentName == document.Name).ToArray())
+            {
+                Fragments.Remove(fragment);
+            }
+            SelectedDocument = Documents.FirstOrDefault();
+            SaveLocalDocuments();
+            StatusMessage = $"Документ удален: {document.Name}";
+            RecordAudit("Удаление документа", "Успешно", document.Name);
+        }
+        catch (Exception exception) when (exception is HttpRequestException or InvalidOperationException)
+        {
+            StatusMessage = $"Не удалось удалить документ: {exception.Message}";
+            RecordAudit("Удаление документа", $"Ошибка: {exception.Message}", document.Name);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     public async Task<string> BuildEncryptedContainerJsonAsync(string password)
@@ -623,8 +731,8 @@ public sealed class MainWindowViewModel : ViewModelBase
             format = "interrogation.enc.v3",
             cryptography = new
             {
-                engine = "OpenSSL",
-                cipher = "AES-256-CBC",
+                engine = "System.Security.Cryptography",
+                cipher = "AES-256-GCM",
                 kdf = "PBKDF2-HMAC-SHA256",
                 iterations = 200000
             },
@@ -698,15 +806,14 @@ public sealed class MainWindowViewModel : ViewModelBase
             string contentType;
             if (mode == 1)
             {
-                bytes = Encoding.UTF8.GetBytes(await BuildEncryptedContainerJsonAsync(secret.Value));
+                bytes = Encoding.UTF8.GetBytes(await BuildServerFullContainerJsonAsync(document, secret.Value, localFragments));
                 fileName = Path.GetFileNameWithoutExtension(document.Name) + ".enc";
                 contentType = "application/json";
             }
             else if (mode == 2)
             {
-                bytes = Encoding.UTF8.GetBytes(DocumentText);
-                fileName = Path.GetFileNameWithoutExtension(document.Name) + ".txt";
-                contentType = "text/plain";
+                EnsurePartDocumentContainsOnlyMarkers(localFragments);
+                (bytes, fileName, contentType) = BuildPartDocumentUpload(document);
             }
             else
             {
@@ -717,8 +824,8 @@ public sealed class MainWindowViewModel : ViewModelBase
                     : document.SourceFormat == "odt" ? "application/vnd.oasis.opendocument.text" : "text/plain";
             }
 
-            if (bytes.Length > InterrogationApiClient.MaxUploadBytes)
-                throw new InvalidOperationException("Размер файла превышает серверный лимит 20 МБ");
+            if (bytes.Length > _apiClient.MaxUploadBytes)
+                throw new InvalidOperationException($"Размер файла превышает серверный лимит {_apiClient.MaxUploadBytes / 1024 / 1024} МБ");
 
             var created = await _apiClient.UploadDocumentAsync(new DocumentUpload(
                 fileName, contentType, bytes, mode, secret.Id, Path.GetFileNameWithoutExtension(document.Name),
@@ -764,6 +871,79 @@ public sealed class MainWindowViewModel : ViewModelBase
         }
     }
 
+    private void EnsurePartDocumentContainsOnlyMarkers(IReadOnlyCollection<FragmentRecord> localFragments)
+    {
+        foreach (var fragment in localFragments)
+        {
+            if (!DocumentText.Contains(fragment.Marker, StringComparison.Ordinal))
+                throw new InvalidOperationException($"В документе отсутствует маркер фрагмента {fragment.Marker}. Повторите шифрование фрагмента.");
+            if (!string.IsNullOrEmpty(fragment.PlainText) && DocumentText.Contains(fragment.PlainText, StringComparison.Ordinal))
+                throw new InvalidOperationException("В документе остался открытый текст зашифрованного фрагмента. Повторите выделение и шифрование.");
+        }
+    }
+
+    private (byte[] Bytes, string FileName, string ContentType) BuildPartDocumentUpload(DocumentItem document)
+    {
+        var baseName = Path.GetFileNameWithoutExtension(document.Name);
+        return document.SourceFormat switch
+        {
+            "docx" => (
+                _documentExportService.ExportDocx(DocumentText, document),
+                baseName + ".docx",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
+            "odt" => (
+                _documentExportService.ExportOdt(DocumentText, document),
+                baseName + ".odt",
+                "application/vnd.oasis.opendocument.text"),
+            _ => (Encoding.UTF8.GetBytes(DocumentText), baseName + ".txt", "text/plain")
+        };
+    }
+
+    private async Task<string> BuildServerFullContainerJsonAsync(DocumentItem document, string serverSecret, IReadOnlyCollection<FragmentRecord> localFragments)
+    {
+        if (!string.IsNullOrWhiteSpace(document.EncryptedPayload))
+            throw new InvalidOperationException("Сначала расшифруйте локально зашифрованный документ перед отправкой в режиме Full.");
+        if (localFragments.Count > 0)
+            throw new InvalidOperationException("Для режима Full нужен цельный документ без локально зашифрованных фрагментов. Используйте Part или расшифруйте фрагменты.");
+
+        var encryptedPayload = await _cryptographyService.EncryptAsync(DocumentText, serverSecret);
+        var integrity = _integrityService.Create([encryptedPayload], serverSecret);
+        var container = new
+        {
+            format = "interrogation.enc.v3",
+            cryptography = new
+            {
+                engine = "System.Security.Cryptography",
+                cipher = "AES-256-GCM",
+                kdf = "PBKDF2-HMAC-SHA256",
+                iterations = 200000
+            },
+            integrity = new
+            {
+                algorithm = "HMAC-SHA256",
+                kdf = "PBKDF2-HMAC-SHA256",
+                iterations = 200000,
+                salt = integrity.Salt,
+                tag = integrity.Tag
+            },
+            exportedAt = DateTimeOffset.Now,
+            role = CurrentRoleText,
+            document = new
+            {
+                document.Id,
+                document.Name,
+                document.CaseNumber,
+                document.Status,
+                document.Owner,
+                document.UpdatedAt
+            },
+            encryptedPayload,
+            fragments = Array.Empty<object>()
+        };
+
+        return JsonSerializer.Serialize(container, new JsonSerializerOptions { WriteIndented = true });
+    }
+
     private IEnumerable<string> GetProtectedValues(string? documentPayload)
     {
         yield return documentPayload ?? string.Empty;
@@ -799,6 +979,93 @@ public sealed class MainWindowViewModel : ViewModelBase
         }
     }
 
+    private void SaveLocalDocuments()
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(LocalStorePath)!);
+            var localDocuments = Documents.Where(document => !document.IsRemote).Select(document => new LocalDocumentState(
+                document.Id,
+                document.Name,
+                document.CaseNumber,
+                document.Owner,
+                document.InvestigationActionType,
+                document.Status,
+                document.Content,
+                document.UpdatedAt,
+                document.EncryptedPayload,
+                document.IntegritySalt,
+                document.IntegrityTag,
+                document.SourceFormat,
+                document.FileLocation)).ToArray();
+            var fragments = Fragments.Select(fragment => new LocalFragmentState(
+                fragment.Marker,
+                fragment.DocumentName,
+                fragment.Preview,
+                fragment.EncryptedPayload,
+                fragment.PlainText,
+                fragment.Length,
+                fragment.CreatedAt)).ToArray();
+            File.WriteAllText(LocalStorePath, JsonSerializer.Serialize(new LocalStoreState(localDocuments, fragments), new JsonSerializerOptions { WriteIndented = true }));
+        }
+        catch (IOException)
+        {
+            StatusMessage = "Локальные документы обновлены, но их не удалось сохранить на диск";
+        }
+        catch (UnauthorizedAccessException)
+        {
+            StatusMessage = "Нет прав на сохранение локальных документов";
+        }
+    }
+
+    private void LoadLocalDocuments()
+    {
+        try
+        {
+            if (!File.Exists(LocalStorePath)) return;
+            var json = File.ReadAllText(LocalStorePath);
+            var store = JsonSerializer.Deserialize<LocalStoreState>(json);
+            var localDocuments = store?.Documents ?? [];
+            foreach (var item in localDocuments.OrderByDescending(item => item.UpdatedAt))
+            {
+                Documents.Add(new DocumentItem
+                {
+                    Id = item.Id,
+                    Name = item.Name,
+                    CaseNumber = item.CaseNumber,
+                    Owner = item.Owner,
+                    InvestigationActionType = item.InvestigationActionType,
+                    Status = item.Status,
+                    Content = item.Content,
+                    UpdatedAt = item.UpdatedAt,
+                    EncryptedPayload = item.EncryptedPayload,
+                    IntegritySalt = item.IntegritySalt,
+                    IntegrityTag = item.IntegrityTag,
+                    SourceFormat = item.SourceFormat,
+                    FileLocation = item.FileLocation
+                });
+                _nextDocumentId = Math.Max(_nextDocumentId, item.Id + 1);
+            }
+            foreach (var item in store?.Fragments ?? [])
+            {
+                Fragments.Add(new FragmentRecord
+                {
+                    Marker = item.Marker,
+                    DocumentName = item.DocumentName,
+                    Preview = item.Preview,
+                    EncryptedPayload = item.EncryptedPayload,
+                    PlainText = item.PlainText,
+                    Length = item.Length,
+                    CreatedAt = item.CreatedAt
+                });
+            }
+        }
+        catch (Exception exception) when (exception is IOException or JsonException or UnauthorizedAccessException)
+        {
+            StatusMessage = "Не удалось восстановить локальные документы";
+        }
+    }
+
     private void ApplyAuditFilter()
     {
         var query = _auditHistory.AsEnumerable();
@@ -825,4 +1092,30 @@ public sealed class MainWindowViewModel : ViewModelBase
             ? property.GetString() ?? fallback
             : fallback;
     }
+
+    private sealed record LocalStoreState(LocalDocumentState[] Documents, LocalFragmentState[] Fragments);
+
+    private sealed record LocalDocumentState(
+        int Id,
+        string Name,
+        string CaseNumber,
+        string Owner,
+        string InvestigationActionType,
+        string Status,
+        string Content,
+        DateTimeOffset UpdatedAt,
+        string? EncryptedPayload,
+        string? IntegritySalt,
+        string? IntegrityTag,
+        string? SourceFormat,
+        string? FileLocation);
+
+    private sealed record LocalFragmentState(
+        string Marker,
+        string DocumentName,
+        string Preview,
+        string EncryptedPayload,
+        string? PlainText,
+        int Length,
+        DateTimeOffset CreatedAt);
 }

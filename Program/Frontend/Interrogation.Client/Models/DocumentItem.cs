@@ -38,11 +38,13 @@ public sealed class DocumentItem : INotifyPropertyChanged
     public string? IntegrityTag { get; set; }
     public bool IsRemote { get; init; }
     public string? RemoteExtension { get; init; }
+    public string? FileLocation { get; set; }
     public byte[]? OriginalFileBytes { get; set; }
     public string? OriginalText { get; set; }
     public string? SourceFormat { get; set; }
 
     public string Summary => $"{CaseNumber} · {Owner}";
+    public string StorageText => IsRemote ? "Сервер API" : FileLocation ?? "Локальное хранилище";
 
     public event PropertyChangedEventHandler? PropertyChanged;
 

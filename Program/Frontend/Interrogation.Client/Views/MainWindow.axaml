@@ -7,7 +7,7 @@
         Height="790"
         MinWidth="1060"
         MinHeight="680"
-        Title="Interrogation Client">
+        Title="Защита документов">
   <Window.Styles>
     <Style Selector="Button">
       <Setter Property="CornerRadius" Value="6" />
@@ -37,17 +37,17 @@
 
   <Grid RowDefinitions="Auto,*" Background="#EFF3F7">
     <Border Grid.Row="0" Background="#1F2933" BorderBrush="#111827" BorderThickness="0,0,0,1">
-      <Grid ColumnDefinitions="*,Auto" Margin="22,14">
-        <StackPanel>
-          <TextBlock Text="Защита протоколов следственных действий" Foreground="#FFFFFF" FontSize="22" FontWeight="SemiBold" />
-          <TextBlock Text="Работа с документами, фрагментами и самодостаточным контейнером .enc.json" Foreground="#C9D4E2" FontSize="12" Margin="0,4,0,0" />
+      <Grid ColumnDefinitions="*,Auto" Margin="16,8">
+        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+          <Button Content="Справка" Click="AboutButton_OnClick" Background="#FFFFFF" Foreground="#111827" />
+          <TextBlock Text="Ctrl+E: зашифровать выделение" Foreground="#C9D4E2" FontSize="12" VerticalAlignment="Center" />
         </StackPanel>
         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
           <StackPanel VerticalAlignment="Center">
             <TextBlock Text="{Binding CurrentUserName}" Foreground="#FFFFFF" FontWeight="SemiBold" HorizontalAlignment="Right" />
             <TextBlock Text="{Binding CurrentRoleText}" Foreground="#C9D4E2" FontSize="12" HorizontalAlignment="Right" />
           </StackPanel>
-          <Button Content="Выйти" Click="LogoutButton_OnClick" />
+          <Button Content="Выйти" Click="LogoutButton_OnClick" Background="#FFFFFF" Foreground="#111827" />
         </StackPanel>
       </Grid>
     </Border>
@@ -56,8 +56,9 @@
       <Border Classes="panel">
         <Grid RowDefinitions="Auto,*,Auto" Margin="14">
           <StackPanel Spacing="3">
-            <TextBlock Text="Документы" Classes="title" />
-            <TextBlock Text="Локальный список для проверки интерфейса" Classes="caption" />
+          <TextBlock Text="Документы" Classes="title" />
+            <TextBlock Text="Локальные и серверные файлы" Classes="caption" />
+            <Button Content="Обновить список" Click="RefreshDocumentsButton_OnClick" HorizontalAlignment="Stretch" Margin="0,10,0,0" />
           </StackPanel>
 
           <ListBox Grid.Row="1"
@@ -88,9 +89,11 @@
             <StackPanel>
               <TextBlock Text="{Binding SelectedDocument.Name, FallbackValue=Документ не выбран}" Classes="title" />
               <TextBlock Text="{Binding DocumentInfo}" Classes="caption" Margin="0,6,0,0" />
+              <TextBlock Text="{Binding DocumentLocationText}" Foreground="#344054" FontSize="12" Margin="0,6,0,0" />
             </StackPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top">
               <Button Content="Сохранить" Click="SaveDraftButton_OnClick" />
+              <Button Content="Удалить" Click="DeleteDocumentButton_OnClick" IsEnabled="{Binding HasSelectedDocument}" />
               <Button Content="Расшифровать" Click="DecryptButton_OnClick" IsEnabled="{Binding CanDecrypt}" />
             </StackPanel>
           </Grid>
@@ -106,7 +109,13 @@
                      FontSize="14"
                      BorderThickness="0"
                      Background="Transparent"
-                     Margin="10" />
+                     Margin="10">
+              <TextBox.ContextMenu>
+                <ContextMenu>
+                  <MenuItem Header="Зашифровать выделение" Click="EncryptFragmentMenuItem_OnClick" />
+                </ContextMenu>
+              </TextBox.ContextMenu>
+            </TextBox>
           </Border>
 
           <Grid Grid.Row="2" RowDefinitions="Auto,Auto" RowSpacing="8">
@@ -128,7 +137,6 @@
           <StackPanel Margin="14" Spacing="10">
             <TextBlock Text="Операции" Classes="title" />
             <TextBlock Text="{Binding CryptoEngineText}" Classes="caption" TextWrapping="Wrap" />
-            <Button Content="Обновить список" Click="RefreshDocumentsButton_OnClick" HorizontalAlignment="Stretch" />
             <ComboBox ItemsSource="{Binding ServerModes}" SelectedItem="{Binding SelectedServerMode}" />
             <Button Content="Отправить на сервер" Click="UploadToServerButton_OnClick" Classes="primary" HorizontalAlignment="Stretch" IsEnabled="{Binding HasSelectedDocument}" />
 

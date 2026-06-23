@@ -16,8 +16,8 @@
   <Grid RowDefinitions="150,*" Background="#EFF3F7">
     <Border Background="#1F2933">
       <StackPanel Margin="36,30" VerticalAlignment="Center" Spacing="7">
-        <TextBlock Text="Защита протоколов" Foreground="#FFFFFF" FontSize="25" FontWeight="SemiBold" />
-        <TextBlock Text="Авторизация через Keycloak" Foreground="#C9D4E2" FontSize="13" />
+        <TextBlock Text="Вход в систему" Foreground="#FFFFFF" FontSize="24" FontWeight="SemiBold" />
+        <TextBlock Text="Keycloak" Foreground="#C9D4E2" FontSize="13" />
       </StackPanel>
     </Border>
     <Border Grid.Row="1" Margin="32" Padding="28" Background="#FFFFFF" BorderBrush="#D8DEE8" BorderThickness="1" CornerRadius="8">

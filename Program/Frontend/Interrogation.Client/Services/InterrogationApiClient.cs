@@ -8,14 +8,18 @@ namespace Interrogation.Client.Services;
 public sealed class InterrogationApiClient : IInterrogationApiClient
 {
     public const int MaxUploadBytes = 20 * 1024 * 1024;
+    private readonly ClientAppConfig _config;
     private readonly HttpClient _httpClient;
     private readonly IIdentityService _identityService;
     private readonly UserSession _session;
 
-    public InterrogationApiClient(IIdentityService identityService, UserSession session)
+    int IInterrogationApiClient.MaxUploadBytes => _config.MaxUploadBytes;
+
+    public InterrogationApiClient(IIdentityService identityService, UserSession session, ClientAppConfig config)
     {
         _identityService = identityService;
         _session = session;
+        _config = config;
         _httpClient = new HttpClient(new HttpClientHandler
         {
             ServerCertificateCustomValidationCallback = (request, _, _, errors) =>
@@ -23,7 +27,8 @@ public sealed class InterrogationApiClient : IInterrogationApiClient
                 request.RequestUri?.Host.EndsWith(".docker.local", StringComparison.OrdinalIgnoreCase) == true
         })
         {
-            BaseAddress = new Uri("https://api.docker.local/")
+            BaseAddress = new Uri(config.ApiBaseUrl),
+            Timeout = TimeSpan.FromSeconds(config.HttpTimeoutSeconds)
         };
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session.AccessToken);
     }
@@ -54,10 +59,12 @@ public sealed class InterrogationApiClient : IInterrogationApiClient
         var bytes = target.ToArray();
         var headerName = response.Content.Headers.ContentDisposition?.FileNameStar
             ?? response.Content.Headers.ContentDisposition?.FileName?.Trim('"');
+        var contentType = response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream";
         var fileName = string.IsNullOrWhiteSpace(headerName)
-            ? fallbackName + extension
+            ? fallbackName
             : headerName;
-        return new(fileName, response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream", bytes);
+        fileName = DocumentContentReader.EnsureFileNameExtension(fileName, extension, contentType, bytes);
+        return new(fileName, contentType, bytes);
     }
 
     public async Task<ApiDocumentDetails> GetDocumentAsync(int id, CancellationToken cancellationToken = default) =>
@@ -83,8 +90,8 @@ public sealed class InterrogationApiClient : IInterrogationApiClient
 
     public async Task<CreatedApiDocument> UploadDocumentAsync(DocumentUpload upload, CancellationToken cancellationToken = default)
     {
-        if (upload.Content.Length > MaxUploadBytes)
-            throw new InvalidOperationException("Размер файла превышает серверный лимит 20 МБ");
+        if (upload.Content.Length > _config.MaxUploadBytes)
+            throw new InvalidOperationException($"Размер файла превышает серверный лимит {_config.MaxUploadBytes / 1024 / 1024} МБ");
         await EnsureTokenAsync(cancellationToken);
         using var form = new MultipartFormDataContent();
         var file = new ByteArrayContent(upload.Content);
@@ -140,10 +147,25 @@ public sealed class InterrogationApiClient : IInterrogationApiClient
         {
             return;
         }
+
         var details = await response.Content.ReadAsStringAsync(cancellationToken);
-        var message = response.StatusCode == System.Net.HttpStatusCode.RequestEntityTooLarge
-            ? "Файл превышает серверный лимит 20 МБ"
-            : $"API {(int)response.StatusCode}: {details}";
+        var message = response.StatusCode switch
+        {
+            System.Net.HttpStatusCode.Forbidden =>
+                "Недостаточно прав для выполнения операции. Проверьте роли пользователя в Keycloak.",
+            System.Net.HttpStatusCode.Unauthorized =>
+                "Сеанс истек или токен не принят сервером. Выполните вход заново.",
+            System.Net.HttpStatusCode.NotFound =>
+                "Объект не найден на сервере. Обновите список документов.",
+            System.Net.HttpStatusCode.RequestEntityTooLarge =>
+                "Файл превышает серверный лимит 20 МБ.",
+            System.Net.HttpStatusCode.BadRequest =>
+                $"Сервер отклонил запрос: {NormalizeDetails(details)}",
+            _ => $"API {(int)response.StatusCode}: {NormalizeDetails(details)}"
+        };
         throw new HttpRequestException(message, null, response.StatusCode);
     }
+
+    private static string NormalizeDetails(string details) =>
+        string.IsNullOrWhiteSpace(details) ? "подробности не переданы" : details.Trim();
 }

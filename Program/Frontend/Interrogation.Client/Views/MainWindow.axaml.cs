@@ -34,6 +34,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         PointerPressed += (_, _) => ResetInactivityTimer();
         KeyDown += (_, _) => ResetInactivityTimer();
+        KeyDown += MainWindow_OnKeyDown;
         Opened += (_, _) => ResetInactivityTimer();
         Closed += (_, _) => _inactivityTimer.Stop();
         _inactivityTimer.Tick += InactivityTimer_OnTick;
@@ -126,11 +127,22 @@ public partial class MainWindow : Window
 
     private async void EncryptFragmentButton_OnClick(object? sender, RoutedEventArgs e)
     {
+        await EncryptSelectedFragmentFromUiAsync();
+    }
+
+    private async void EncryptFragmentMenuItem_OnClick(object? sender, RoutedEventArgs e)
+    {
+        await EncryptSelectedFragmentFromUiAsync();
+    }
+
+    private async Task EncryptSelectedFragmentFromUiAsync()
+    {
         if (ViewModel is null)
         {
             return;
         }
 
+        UseCachedSelectionIfNeeded();
         var password = await RequestPasswordAsync("Шифрование фрагмента", confirmPassword: true);
         if (password is not null)
         {
@@ -139,6 +151,29 @@ public partial class MainWindow : Window
         _cachedSelectedText = string.Empty;
         _cachedSelectionStart = -1;
         _cachedSelectionLength = 0;
+    }
+
+    private async void MainWindow_OnKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.KeyModifiers == KeyModifiers.Control && e.Key == Key.E)
+        {
+            e.Handled = true;
+            await EncryptSelectedFragmentFromUiAsync();
+        }
+    }
+
+    private void UseCachedSelectionIfNeeded()
+    {
+        if (ViewModel is null || !string.IsNullOrWhiteSpace(ViewModel.SelectedFragmentText))
+        {
+            return;
+        }
+
+        CacheEditorSelection();
+        if (!string.IsNullOrWhiteSpace(_cachedSelectedText) && _cachedSelectionStart >= 0)
+        {
+            ViewModel.SetSelectedFragment(_cachedSelectedText, _cachedSelectionStart, _cachedSelectionLength);
+        }
     }
 
     private async void EncryptFullButton_OnClick(object? sender, RoutedEventArgs e)
@@ -183,6 +218,47 @@ public partial class MainWindow : Window
     {
         if (ViewModel is not null) await ViewModel.UploadSelectedDocumentAsync();
     }
+
+    private async void DeleteDocumentButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (ViewModel is not null) await ViewModel.DeleteSelectedDocumentAsync();
+    }
+
+    private async void AboutButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        var closeButton = new Button
+        {
+            Content = "Закрыть",
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right
+        };
+        var dialog = new Window
+        {
+            Title = "О программе",
+            Width = 460,
+            Height = 260,
+            CanResize = false,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Content = new Border
+            {
+                Padding = new Avalonia.Thickness(22),
+                Child = new StackPanel
+                {
+                    Spacing = 10,
+                    Children =
+                    {
+                        new TextBlock { Text = "Защита документов", FontSize = 20, FontWeight = Avalonia.Media.FontWeight.SemiBold },
+                        new TextBlock { Text = "Алгоритм: AES-256-GCM через System.Security.Cryptography", TextWrapping = Avalonia.Media.TextWrapping.Wrap },
+                        new TextBlock { Text = "Ключ: локальный пароль или секрет сервера, PBKDF2-SHA256 для контейнера.", TextWrapping = Avalonia.Media.TextWrapping.Wrap },
+                        new TextBlock { Text = "Горячая клавиша: Ctrl+E шифрует выделенный фрагмент.", TextWrapping = Avalonia.Media.TextWrapping.Wrap },
+                        closeButton
+                    }
+                }
+            }
+        };
+        closeButton.Click += (_, _) => dialog.Close();
+        await dialog.ShowDialog(this);
+    }
+
     private async void UploadButton_OnClick(object? sender, RoutedEventArgs e)
     {
         if (ViewModel is null)
@@ -233,7 +309,8 @@ public partial class MainWindow : Window
             file.Name,
             content,
             preserveSource ? fileBytes : null,
-            preserveSource ? sourceFormat : null);
+            preserveSource ? sourceFormat : null,
+            file.Path?.LocalPath);
     }
 
     private async void ExportButton_OnClick(object? sender, RoutedEventArgs e)
@@ -308,14 +385,22 @@ public partial class MainWindow : Window
             DefaultExtension = format
         });
         if (file is null) return;
-        var bytes = format == "docx"
-            ? _documentExportService.ExportDocx(ViewModel.DocumentText, document)
-            : _documentExportService.ExportOdt(ViewModel.DocumentText, document);
-        await using var stream = await file.OpenWriteAsync();
-        stream.SetLength(0);
-        await stream.WriteAsync(bytes);
-        ViewModel.StatusMessage = $"Документ экспортирован: {file.Name}";
-        ViewModel.RecordAudit($"Экспорт {format.ToUpperInvariant()}", "Успешно");
+        try
+        {
+            var bytes = format == "docx"
+                ? _documentExportService.ExportDocx(ViewModel.DocumentText, document)
+                : _documentExportService.ExportOdt(ViewModel.DocumentText, document);
+            await using var stream = await file.OpenWriteAsync();
+            stream.SetLength(0);
+            await stream.WriteAsync(bytes);
+            ViewModel.StatusMessage = $"Документ экспортирован: {file.Name}";
+            ViewModel.RecordAudit($"Экспорт {format.ToUpperInvariant()}", "Успешно");
+        }
+        catch (Exception exception) when (exception is IOException or InvalidDataException or ArgumentException)
+        {
+            ViewModel.StatusMessage = $"Не удалось экспортировать документ: {exception.Message}";
+            ViewModel.RecordAudit($"Экспорт {format.ToUpperInvariant()}", $"Ошибка: {exception.Message}");
+        }
     }
 
     private static bool IsEncryptedContainer(string fileName, string content)
