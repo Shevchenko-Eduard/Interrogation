@@ -31,9 +31,26 @@ echo -e "${GREEN}Найден домен: $SERVER_DOMAIN${NC}"
 # Выполнение ping 3 раза
 echo -e "${YELLOW}Выполняется ping к $SERVER_DOMAIN (3 попытки)...${NC}"
 
+OS="$(uname -s)"
 # Сохраняем вывод ping в переменную
-PING_OUTPUT=$(ping -c 3 "$SERVER_DOMAIN" 2>&1)
-PING_EXIT_CODE=$?
+case "$OS" in
+    Linux*)
+        PING_OUTPUT=$(ping -c 3 "$SERVER_DOMAIN" 2>&1)
+        PING_EXIT_CODE=$?
+        ;;
+    Darwin*)
+        PING_OUTPUT=$(ping -c 3 "$SERVER_DOMAIN" 2>&1)
+        PING_EXIT_CODE=$?
+        ;;
+    CYGWIN*|MINGW*|MSYS*)
+        PING_OUTPUT=$(ping -n 3 "$SERVER_DOMAIN" 2>&1)
+        PING_EXIT_CODE=$?
+        ;;
+    *)
+        PING_OUTPUT="${RED}Ошибка: Неизвестная операционная система. Поддерживаются только Linux, macOS и Windows.${NC}"
+        PING_EXIT_CODE=1
+        ;;
+esac
 
 # Проверка результата ping
 if [ $PING_EXIT_CODE -ne 0 ]; then
@@ -46,7 +63,6 @@ if [ $PING_EXIT_CODE -ne 0 ]; then
     echo -e "2. Добавьте локальную запись в файл hosts:"
     
     # Определение ОС
-    OS="$(uname -s)"
     case "$OS" in
         Linux*)
             echo -e "   ${GREEN}Для Linux:${NC} sudo nano /etc/hosts"
@@ -61,10 +77,9 @@ if [ $PING_EXIT_CODE -ne 0 ]; then
             echo -e "   Добавьте строку: 127.0.0.1 $SERVER_DOMAIN"
             ;;
         *)
-            echo -e "   ${GREEN}Неизвестная ОС:${NC} Добавьте запись в файл hosts вручную"
+            echo -e "   ${GREEN}Неизвестная ОС:${NC} Добавьте запись в файл hosts или его аналог в вашей системе."
             ;;
     esac
-    echo -e "${YELLOW}Или выполните скрипт для автоматического добавления записи, если он существует${NC}"
     
     exit 1
 else
